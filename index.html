@@ -91,7 +91,16 @@
 
             <!-- Formulario para agregar pedidos -->
             <div id="form-container-pedido" class="bg-white p-6 rounded-lg shadow-md mb-8 max-w-2xl mx-auto">
-                <h2 class="text-2xl font-semibold mb-4" id="form-pedido-title">Registrar Nuevo Pedido</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold" id="form-pedido-title">Registrar Nuevo Pedido</h2>
+                    <div class="flex items-center gap-2">
+                        <label for="moneda-select" class="text-sm font-medium text-gray-600">Moneda:</label>
+                        <select id="moneda-select" class="border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            <option value="C$">C$ - Córdobas</option>
+                            <option value="$">$ - Dólares</option>
+                        </select>
+                    </div>
+                </div>
                 <form id="form-pedido">
                     <input type="hidden" id="pedido-id-edit">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -127,12 +136,18 @@
                     </div>
                     <div class="mt-4 space-y-2 bg-gray-50 p-3 rounded-md">
                         <div class="flex justify-between items-center"><span class="font-semibold">Subtotal:</span><span id="subtotal-display" class="font-semibold">C$0.00</span></div>
-                        <div class="flex justify-between items-center gap-4"><label for="descuento-input" class="font-semibold text-gray-700">Descuento:</label><div class="flex items-center"><span class="text-gray-500 mr-1">C$</span><input type="number" id="descuento-input" step="0.01" placeholder="0.00" class="w-24 border border-gray-300 rounded-md shadow-sm py-1 px-2 text-right focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div></div>
+                        <div class="flex justify-between items-center gap-4">
+                            <label for="descuento-input" class="font-semibold text-gray-700">Descuento:</label>
+                            <div class="flex items-center">
+                                <span class="text-gray-500 mr-1 currency-symbol">C$</span>
+                                <input type="number" id="descuento-input" step="0.01" placeholder="0.00" class="w-24 border border-gray-300 rounded-md shadow-sm py-1 px-2 text-right focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                        </div>
                         <div class="flex justify-between items-center border-t pt-2 mt-2"><span class="text-lg font-bold">Monto Total a Pagar:</span><span id="monto-total-pagar-display" class="text-lg font-bold">C$0.00</span></div>
                     </div>
                     <div class="mt-4">
                         <label for="abono_inicial" class="block text-sm font-medium text-gray-700">Abono Inicial</label>
-                        <div class="flex items-center mt-1"><span class="text-gray-500 mr-1">C$</span><input type="number" id="abono_inicial" step="0.01" placeholder="0.00" class="w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div>
+                        <div class="flex items-center mt-1"><span class="text-gray-500 mr-1 currency-symbol">C$</span><input type="number" id="abono_inicial" step="0.01" placeholder="0.00" class="w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div>
                     </div>
                     <div class="mt-6 flex justify-end gap-3"><button type="button" id="cancel-edit-btn" class="hidden bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-400">Cancelar</button><button type="submit" id="submit-pedido-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700">Guardar Pedido</button></div>
                 </form>
@@ -155,7 +170,7 @@
 
     <!-- Modals -->
     <div id="details-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-11/12 max-w-2xl max-h-[80vh] flex flex-col"><div class="p-4 border-b flex justify-between items-center"><h2 class="text-xl font-semibold">Historial de <span id="modal-cliente-nombre"></span></h2><button id="close-details-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><div id="modal-body" class="p-6 overflow-y-auto space-y-3"></div></div></div>
-    <div id="pago-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm"><div class="p-4 border-b flex justify-between items-center"><h2 class="text-xl font-semibold">Registrar Abono</h2><button id="close-pago-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><form id="form-pago" class="p-6"><input type="hidden" id="pago-pedido-id"><div class="space-y-3 text-sm"><div class="flex justify-between"><span>Total del Pedido:</span><span id="pago-modal-total" class="font-semibold"></span></div><div class="flex justify-between"><span>Total Pagado:</span><span id="pago-modal-pagado" class="font-semibold text-green-600"></span></div><div class="flex justify-between text-base"><strong>Saldo Pendiente:</strong><strong id="pago-modal-saldo" class="text-red-600"></strong></div></div><hr class="my-4"><div><label for="pago-monto-input" class="block text-sm font-medium text-gray-700">Monto del Abono</label><div class="flex items-center mt-1"><span class="text-gray-500 mr-1">C$</span><input type="number" id="pago-monto-input" step="0.01" min="0.01" required class="w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div></div><div class="mt-6 text-right"><button type="submit" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700">Guardar Pago</button></div></form></div></div>
+    <div id="pago-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm"><div class="p-4 border-b flex justify-between items-center"><h2 class="text-xl font-semibold">Registrar Abono (<span id="pago-moneda-label"></span>)</h2><button id="close-pago-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><form id="form-pago" class="p-6"><input type="hidden" id="pago-pedido-id"><div class="space-y-3 text-sm"><div class="flex justify-between"><span>Total del Pedido:</span><span id="pago-modal-total" class="font-semibold"></span></div><div class="flex justify-between"><span>Total Pagado:</span><span id="pago-modal-pagado" class="font-semibold text-green-600"></span></div><div class="flex justify-between text-base"><strong>Saldo Pendiente:</strong><strong id="pago-modal-saldo" class="text-red-600"></strong></div></div><hr class="my-4"><div><label for="pago-monto-input" class="block text-sm font-medium text-gray-700">Monto del Abono</label><div class="flex items-center mt-1"><span class="text-gray-500 mr-1 currency-symbol-pago">C$</span><input type="number" id="pago-monto-input" step="0.01" min="0.01" required class="w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div></div><div class="mt-6 text-right"><button type="submit" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700">Guardar Pago</button></div></form></div></div>
     <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm"><div class="p-6 text-center"><h3 class="text-lg font-semibold" id="confirm-modal-title">¿Estás seguro?</h3><p class="text-sm text-gray-600 mt-2" id="confirm-modal-text">Esta acción no se puede deshacer.</p><div class="mt-6 flex justify-center gap-4"><button id="confirm-modal-cancel-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400">Cancelar</button><button id="confirm-modal-confirm-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">Confirmar</button></div></div></div></div>
     <div id="receipt-container"><div id="receipt-content"></div></div>
 
@@ -188,22 +203,17 @@
                 listenToPedidos();
             } else {
                 currentUser = null;
-                authenticateUser(); // Intenta autenticar si no hay usuario
+                authenticateUser();
             }
         });
 
         async function authenticateUser() {
             try {
-                if (auth.currentUser) return; // Si ya hay un usuario (incluso anónimo), no hacer nada
+                if (auth.currentUser) return;
                 await signInAnonymously(auth);
             } catch (error) {
                 console.error("Error de autenticación:", error);
                 let userMessage = `<strong>Error de Conexión:</strong> No se pudo conectar a la base de datos.`;
-                if (error.code === 'auth/configuration-not-found') {
-                    userMessage += `<br><br><strong>Causa probable:</strong> El inicio de sesión anónimo no está habilitado en tu proyecto de Firebase. <br><br><strong>Solución:</strong> Ve a tu proyecto de Firebase > Authentication > Sign-in method y habilita la opción "Anónimo".`;
-                } else {
-                    userMessage += ` Por favor, verifica tu conexión a internet y la configuración de Firebase.`;
-                }
                 document.body.innerHTML = `<div class="container mx-auto mt-10 p-4 text-center text-red-800 bg-red-100 border border-red-300 rounded-lg">${userMessage}</div>`;
             }
         }
@@ -223,6 +233,7 @@
         const formCliente = document.getElementById('form-cliente');
         const formPedido = document.getElementById('form-pedido');
         const clienteSelect = document.getElementById('cliente-select');
+        const monedaSelect = document.getElementById('moneda-select');
         const listaPedidos = document.getElementById('lista-pedidos');
         const listaClientes = document.getElementById('lista-clientes');
         let returnToPedidosView = false;
@@ -249,8 +260,8 @@
         // --- Lógica General ---
         function getStatusColor(estado) { const c = {'En Proceso':'bg-yellow-100 text-yellow-800','Completado':'bg-blue-100 text-blue-800','Entregado':'bg-green-100 text-green-800'}; return c[estado] || 'bg-gray-100'; }
         function getPaymentStatusColor(estado) { const c = {'Pagado':'bg-green-100 text-green-800','Abonado':'bg-orange-100 text-orange-800','Pendiente':'bg-red-100 text-red-800'}; return c[estado] || 'bg-gray-100'; }
-        function showConfirmModal(title, text, onConfirm) { const cm=document.getElementById('confirm-modal'); cm.querySelector('#confirm-modal-title').textContent=title; cm.querySelector('#confirm-modal-text').textContent=text; cm.classList.remove('hidden'); cm.classList.add('flex'); const cb=cm.querySelector('#confirm-modal-confirm-btn'); const clb=cm.querySelector('#confirm-modal-cancel-btn'); const ch=()=>{onConfirm();hcm();rL();}; const clh=()=>{hcm();rL();}; const rL=()=>{cb.removeEventListener('click',ch);clb.removeEventListener('click',clh);}; cb.addEventListener('click',ch); clb.addEventListener('click',clh); }
-        function hideConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
+        function showConfirmModal(title, text, onConfirm) { const cm=document.getElementById('confirm-modal'); cm.querySelector('#confirm-modal-title').textContent=title; cm.querySelector('#confirm-modal-text').textContent=text; cm.classList.remove('hidden'); cm.classList.add('flex'); const cb=cm.querySelector('#confirm-modal-confirm-btn'); const clb=cm.querySelector('#confirm-modal-cancel-btn'); const ch=()=>{onConfirm();hideConfirmModal();rL();}; const clh=()=>{hideConfirmModal();rL();}; const rL=()=>{cb.removeEventListener('click',ch);clb.removeEventListener('click',clh);}; cb.addEventListener('click',ch); clb.addEventListener('click',clh); }
+        function hideConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); document.getElementById('confirm-modal').classList.remove('flex'); }
         
         // --- Lógica de Clientes ---
         function updateClientIdField() {
@@ -280,74 +291,8 @@
                 listaClientes.appendChild(card);
             });
         }
-        function loadClienteForEdit(id) { 
-            const cliente = allClientes.find(c => c.id === id); 
-            if (!cliente) return; 
-            const form = document.getElementById('form-cliente'); 
-            form.querySelector('#cliente-id-edit').value = id; 
-            form.querySelector('#nuevo-cliente-id').value = cliente.clienteId ? cliente.clienteId.toString().padStart(4, '0') : 'N/A';
-            form.querySelector('#nuevo-cliente-nombre').value = cliente.nombre; 
-            form.querySelector('#nuevo-cliente-telefono').value = cliente.telefono || ''; 
-            document.getElementById('form-cliente-title').textContent = "Actualizar Cliente"; 
-            document.getElementById('submit-cliente-btn').textContent = "Actualizar"; 
-            document.getElementById('cancel-cliente-edit-btn').classList.remove('hidden'); 
-            form.scrollIntoView({ behavior: 'smooth' }); 
-        }
-        function resetClienteForm() { 
-            const form = document.getElementById('form-cliente'); 
-            form.reset(); 
-            form.querySelector('#cliente-id-edit').value = ''; 
-            updateClientIdField();
-            document.getElementById('form-cliente-title').textContent = "Registrar Nuevo Cliente"; 
-            document.getElementById('submit-cliente-btn').textContent = "Guardar Cliente"; 
-            document.getElementById('cancel-cliente-edit-btn').classList.add('hidden'); 
-        }
-        document.getElementById('cancel-cliente-edit-btn').addEventListener('click', () => {
-            resetClienteForm();
-            if (returnToPedidosView) {
-                returnToPedidosView = false;
-                showView(pedidosView);
-            }
-        });
-        listaClientes.addEventListener('click', (e) => {
-            const id = e.target.dataset.id; if (!id) return;
-            if (e.target.classList.contains('edit-cliente-btn')) loadClienteForEdit(id);
-            else if (e.target.classList.contains('delete-cliente-btn')) showConfirmModal('¿Eliminar Cliente?', 'Esta acción no se puede deshacer.', async () => await deleteDoc(doc(db, "clientes", id)));
-            else if (e.target.classList.contains('history-cliente-btn')) showDetailsModal(null, allClientes.find(c=>c.id === id)?.nombre);
-        });
-        formCliente.addEventListener('submit', async (e) => { 
-            e.preventDefault(); 
-            const id = document.getElementById('cliente-id-edit').value; 
-            const nombre = document.getElementById('nuevo-cliente-nombre').value.trim(); 
-            const telefono = document.getElementById('nuevo-cliente-telefono').value.trim(); 
-            if (!nombre || !telefono) return; 
-            
-            const data = { nombre, telefono }; 
-            
-            try { 
-                if (id) {
-                    await updateDoc(doc(db, "clientes", id), data); 
-                } else {
-                    data.clienteId = nextClientId;
-                    await addDoc(clientesCollectionRef, data); 
-                }
 
-                resetClienteForm(); 
-
-                if (returnToPedidosView) {
-                    setTimeout(() => {
-                        showView(pedidosView);
-                        clienteSelect.value = nombre;
-                        returnToPedidosView = false;
-                    }, 400);
-                }
-            } catch(error) { 
-                console.error("Error al guardar cliente:", error); 
-                alert("Error al guardar cliente: " + error.message);
-            } 
-        });
-        
-        // --- Lógica de Pedidos (con sus referencias de DOM) ---
+        // --- Lógica de Pedidos ---
         const searchInput = document.getElementById('search-input');
         const filtroEstado = document.getElementById('filtro-estado');
         const itemsContainer = document.getElementById('items-container');
@@ -356,18 +301,64 @@
         const descuentoInput = document.getElementById('descuento-input');
         const montoTotalPagarDisplay = document.getElementById('monto-total-pagar-display');
 
-        function renderPedidos(pedidos) { listaPedidos.innerHTML = ''; const lm = document.getElementById('loading-message'); if (lm) lm.remove(); if (pedidos.length === 0) { listaPedidos.innerHTML = `<p class="text-center text-gray-500">No se encontraron pedidos.</p>`; return; } pedidos.sort((a, b) => new Date(a.fecha_entrega) - new Date(b.fecha_entrega)); pedidos.forEach(p => { const saldo = (p.monto_total || 0) - (p.total_pagado || 0); const card = document.createElement('div'); card.className = 'border rounded-lg p-4 shadow-sm bg-white hover:shadow-md'; card.innerHTML = ` <div class="flex flex-col md:flex-row justify-between items-start"> <div class="flex-1 mb-4 md:mb-0"> <p class="font-bold text-lg text-indigo-700">${p.cliente}</p> <p class="text-gray-600 break-words">${p.descripcion}</p> <p class="text-sm text-gray-500 mt-2">Entrega: ${new Date(p.fecha_entrega + 'T00:00:00-06:00').toLocaleDateString('es-NI')}</p> </div> <div class="text-left md:text-right w-full md:w-auto"> <p class="font-semibold text-lg">Total: C$${parseFloat(p.monto_total || 0).toFixed(2)}</p> <p class="font-bold text-red-600">Saldo: C$${saldo.toFixed(2)}</p> <div class="mt-2 space-x-2"><span class="text-sm font-medium px-2.5 py-0.5 rounded-full ${getPaymentStatusColor(p.estado_pago)}">${p.estado_pago}</span><span class="text-sm font-medium px-2.5 py-0.5 rounded-full ${getStatusColor(p.estado)}">${p.estado}</span></div> </div> </div> <div class="mt-4 pt-4 border-t flex flex-wrap gap-2 justify-end"> <button data-id="${p.id}" class="details-btn bg-purple-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-purple-600">Ver Detalles</button> <button data-id="${p.id}" class="print-btn bg-gray-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-gray-600">Imprimir</button> ${p.estado_pago !== 'Pagado' ? `<button data-id="${p.id}" class="add-payment-btn bg-emerald-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-emerald-600">Abono</button>`: ''} ${p.estado === 'En Proceso' ? `<button data-id="${p.id}" class="update-status-btn bg-blue-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-blue-600" data-status="Completado">Completado</button>` : ''} ${p.estado === 'Completado' ? `<button data-id="${p.id}" class="update-status-btn bg-green-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-green-600" data-status="Entregado">Entregado</button>` : ''} <button data-id="${p.id}" class="edit-btn bg-yellow-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-yellow-600">Editar</button> <button data-id="${p.id}" class="delete-btn bg-red-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-red-600">Eliminar</button> </div>`; listaPedidos.appendChild(card); }); }
+        monedaSelect.addEventListener('change', (e) => {
+            const symbol = e.target.value;
+            document.querySelectorAll('.currency-symbol').forEach(el => el.textContent = symbol);
+            calcularTotal();
+        });
+
+        function renderPedidos(pedidos) { 
+            listaPedidos.innerHTML = ''; 
+            const lm = document.getElementById('loading-message'); 
+            if (lm) lm.remove(); 
+            if (pedidos.length === 0) { 
+                listaPedidos.innerHTML = `<p class="text-center text-gray-500">No se encontraron pedidos.</p>`; 
+                return; 
+            } 
+            pedidos.sort((a, b) => new Date(a.fecha_entrega) - new Date(b.fecha_entrega)); 
+            pedidos.forEach(p => { 
+                const moneda = p.moneda || 'C$';
+                const saldo = (p.monto_total || 0) - (p.total_pagado || 0); 
+                const card = document.createElement('div'); 
+                card.className = 'border rounded-lg p-4 shadow-sm bg-white hover:shadow-md'; 
+                card.innerHTML = ` 
+                    <div class="flex flex-col md:flex-row justify-between items-start"> 
+                        <div class="flex-1 mb-4 md:mb-0"> 
+                            <p class="font-bold text-lg text-indigo-700">${p.cliente}</p> 
+                            <p class="text-gray-600 break-words">${p.descripcion}</p> 
+                            <p class="text-sm text-gray-500 mt-2">Entrega: ${new Date(p.fecha_entrega + 'T00:00:00-06:00').toLocaleDateString('es-NI')}</p> 
+                        </div> 
+                        <div class="text-left md:text-right w-full md:w-auto"> 
+                            <p class="font-semibold text-lg">Total: ${moneda}${parseFloat(p.monto_total || 0).toFixed(2)}</p> 
+                            <p class="font-bold text-red-600">Saldo: ${moneda}${saldo.toFixed(2)}</p> 
+                            <div class="mt-2 space-x-2"><span class="text-sm font-medium px-2.5 py-0.5 rounded-full ${getPaymentStatusColor(p.estado_pago)}">${p.estado_pago}</span><span class="text-sm font-medium px-2.5 py-0.5 rounded-full ${getStatusColor(p.estado)}">${p.estado}</span></div> 
+                        </div> 
+                    </div> 
+                    <div class="mt-4 pt-4 border-t flex flex-wrap gap-2 justify-end"> 
+                        <button data-id="${p.id}" class="details-btn bg-purple-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-purple-600">Ver Detalles</button> 
+                        <button data-id="${p.id}" class="print-btn bg-gray-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-gray-600">Imprimir</button> 
+                        ${p.estado_pago !== 'Pagado' ? `<button data-id="${p.id}" class="add-payment-btn bg-emerald-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-emerald-600">Abono</button>`: ''} 
+                        ${p.estado === 'En Proceso' ? `<button data-id="${p.id}" class="update-status-btn bg-blue-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-blue-600" data-status="Completado">Completado</button>` : ''} 
+                        ${p.estado === 'Completado' ? `<button data-id="${p.id}" class="update-status-btn bg-green-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-green-600" data-status="Entregado">Entregado</button>` : ''} 
+                        <button data-id="${p.id}" class="edit-btn bg-yellow-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-yellow-600">Editar</button> 
+                        <button data-id="${p.id}" class="delete-btn bg-red-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-red-600">Eliminar</button> 
+                    </div>`; 
+                listaPedidos.appendChild(card); 
+            }); 
+        }
+
         function applyFilters() { const filtro = filtroEstado.value; const search = searchInput.value.toLowerCase(); let filtrados = allPedidos; if (filtro !== 'Todos') filtrados = filtrados.filter(p => p.estado === filtro); if (search) filtrados = filtrados.filter(p => p.cliente.toLowerCase().includes(search) || p.descripcion.toLowerCase().includes(search)); renderPedidos(filtrados); }
         
         function agregarItem(cant = 1, desc = '', precio = '') {
             const d = document.createElement('div');
             d.className = 'flex items-center gap-2 item-row';
+            const symbol = monedaSelect.value;
             const monto = (cant * precio) || 0;
             d.innerHTML = `
                 <input type="number" placeholder="Cant" class="item-cantidad w-16 border rounded-md py-1 px-2 text-center" value="${cant}" min="1" required>
                 <input type="text" placeholder="Descripción" class="item-descripcion flex-grow border rounded-md py-1 px-2" value="${desc}" required>
                 <input type="number" placeholder="P/U" step="0.01" class="item-precio-unitario w-24 border rounded-md py-1 px-2 text-right" value="${precio}" min="0" required>
-                <span class="item-monto-display w-24 text-right p-2 font-medium">C$${monto.toFixed(2)}</span>
+                <span class="item-monto-display w-24 text-right p-2 font-medium">${symbol}${monto.toFixed(2)}</span>
                 <button type="button" class="remove-item-btn text-red-500 font-bold text-xl">&times;</button>
             `;
             itemsContainer.appendChild(d);
@@ -375,25 +366,36 @@
 
         function calcularTotal() {
             let subtotal = 0;
+            const symbol = monedaSelect.value;
             itemsContainer.querySelectorAll('.item-row').forEach(row => {
                 const qty = parseFloat(row.querySelector('.item-cantidad').value) || 0;
                 const price = parseFloat(row.querySelector('.item-precio-unitario').value) || 0;
-                subtotal += qty * price;
+                const rowMonto = qty * price;
+                row.querySelector('.item-monto-display').textContent = `${symbol}${rowMonto.toFixed(2)}`;
+                subtotal += rowMonto;
             });
             const desc = parseFloat(descuentoInput.value) || 0;
-            subtotalDisplay.textContent = `C$${subtotal.toFixed(2)}`;
-            montoTotalPagarDisplay.textContent = `C$${(subtotal - desc).toFixed(2)}`;
+            subtotalDisplay.textContent = `${symbol}${subtotal.toFixed(2)}`;
+            montoTotalPagarDisplay.textContent = `${symbol}${(subtotal - desc).toFixed(2)}`;
         }
         
-        // --- Listeners y Lógica de Datos Unificada ---
+        // --- Listeners y Lógica de Datos ---
         function listenToPedidos() { onSnapshot(pedidosCollectionRef, (snap) => { allPedidos = snap.docs.map(d => ({ id: d.id, ...d.data() })); applyFilters(); }, e => console.error(e)); }
         function listenToClientes() { onSnapshot(clientesCollectionRef, (snap) => { allClientes = snap.docs.map(d => ({ id: d.id, ...d.data() })); 
             const maxId = allClientes.reduce((max, c) => (c.clienteId && c.clienteId > max) ? c.clienteId : max, 0);
             nextClientId = maxId + 1;
-            if (!document.getElementById('cliente-id-edit').value) {
-                updateClientIdField();
-            }
-        allClientes.sort((a, b) => a.nombre.localeCompare(b.nombre)); const sel = clienteSelect.value; clienteSelect.innerHTML = '<option value="" disabled>Selecciona un cliente</option>'; allClientes.forEach(c => { const o = document.createElement('option'); o.value = c.nombre; o.textContent = `${c.clienteId.toString().padStart(4, '0')} - ${c.nombre}`; clienteSelect.appendChild(o); }); if (allClientes.find(c => c.nombre === sel)) clienteSelect.value = sel; renderClientes(); }, e => console.error(e)); }
+            if (!document.getElementById('cliente-id-edit').value) updateClientIdField();
+            allClientes.sort((a, b) => a.nombre.localeCompare(b.nombre)); 
+            const sel = clienteSelect.value; 
+            clienteSelect.innerHTML = '<option value="" disabled>Selecciona un cliente</option>'; 
+            allClientes.forEach(c => { 
+                const o = document.createElement('option'); 
+                o.value = c.nombre; o.textContent = `${c.clienteId.toString().padStart(4, '0')} - ${c.nombre}`; 
+                clienteSelect.appendChild(o); 
+            }); 
+            if (allClientes.find(c => c.nombre === sel)) clienteSelect.value = sel; 
+            renderClientes(); 
+        }, e => console.error(e)); }
         
         const detailsModal = document.getElementById('details-modal');
         const modalClienteNombre = document.getElementById('modal-cliente-nombre');
@@ -407,31 +409,64 @@
         const pagoModalPagado = document.getElementById('pago-modal-pagado');
         const pagoModalSaldo = document.getElementById('pago-modal-saldo');
         const pagoMontoInput = document.getElementById('pago-monto-input');
-        function openPagoModal(id) { const pedido = allPedidos.find(p=>p.id===id); if(!pedido) return; const total = parseFloat(pedido.monto_total); const pagado = parseFloat(pedido.total_pagado || 0); const saldo = total - pagado; pagoPedidoId.value = id; pagoModalTotal.textContent = `C$${total.toFixed(2)}`; pagoModalPagado.textContent = `C$${pagado.toFixed(2)}`; pagoModalSaldo.textContent = `C$${saldo.toFixed(2)}`; pagoMontoInput.value = ''; pagoMontoInput.max = saldo.toFixed(2); pagoModal.classList.remove('hidden'); pagoModal.classList.add('flex'); pagoMontoInput.focus(); }
-        function closePagoModal() { pagoModal.classList.add('hidden'); }
+        const pagoMonedaLabel = document.getElementById('pago-moneda-label');
+        const currencySymbolPago = document.querySelector('.currency-symbol-pago');
+
+        function closeDetailsModal() {
+            detailsModal.classList.add('hidden');
+            detailsModal.classList.remove('flex');
+        }
+
+        function closePagoModal() {
+            pagoModal.classList.add('hidden');
+            pagoModal.classList.remove('flex');
+        }
+
+        function openPagoModal(id) { 
+            const pedido = allPedidos.find(p=>p.id===id); 
+            if(!pedido) return; 
+            const moneda = pedido.moneda || 'C$';
+            const total = parseFloat(pedido.monto_total); 
+            const pagado = parseFloat(pedido.total_pagado || 0); 
+            const saldo = total - pagado; 
+            pagoPedidoId.value = id; 
+            pagoMonedaLabel.textContent = moneda === 'C$' ? 'Córdobas' : 'Dólares';
+            currencySymbolPago.textContent = moneda;
+            pagoModalTotal.textContent = `${moneda}${total.toFixed(2)}`; 
+            pagoModalPagado.textContent = `${moneda}${pagado.toFixed(2)}`; 
+            pagoModalSaldo.textContent = `${moneda}${saldo.toFixed(2)}`; 
+            pagoMontoInput.value = ''; 
+            pagoMontoInput.max = saldo.toFixed(2); 
+            pagoModal.classList.remove('hidden'); 
+            pagoModal.classList.add('flex'); 
+            pagoMontoInput.focus(); 
+        }
+
         function showDetailsModal(pedidoId, clienteNombre) {
-            const cliente = allClientes.find(c => c.nombre === clienteNombre);
             modalClienteNombre.textContent = clienteNombre;
             const pedidosCliente = allPedidos.filter(p => p.cliente === clienteNombre).sort((a,b) => (b.fecha_pedido?.seconds || 0) - (a.fecha_pedido?.seconds || 0));
             
             if (pedidosCliente.length === 0) { modalBody.innerHTML = '<p>Este cliente no tiene pedidos registrados.</p>'; } else {
                 modalBody.innerHTML = '';
                 pedidosCliente.forEach(pedido => {
+                    const moneda = pedido.moneda || 'C$';
                     const saldo = (pedido.monto_total || 0) - (pedido.total_pagado || 0);
                     const item = document.createElement('div');
                     item.className = 'p-3 border rounded-md bg-gray-50';
-                    item.innerHTML = `<div class="flex justify-between items-start"><div><p class="font-semibold">${pedido.descripcion}</p><p class="text-sm text-gray-500">Pedido: ${pedido.fecha_pedido?.toDate ? pedido.fecha_pedido.toDate().toLocaleDateString('es-NI') : 'N/A'}</p></div><div class="text-right"><p class="font-medium">Total: C$${(pedido.monto_total||0).toFixed(2)}</p><p class="text-sm font-semibold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}">Saldo: C$${saldo.toFixed(2)}</p></div></div>`;
+                    item.innerHTML = `<div class="flex justify-between items-start"><div><p class="font-semibold">${pedido.descripcion}</p><p class="text-sm text-gray-500">Pedido: ${pedido.fecha_pedido?.toDate ? pedido.fecha_pedido.toDate().toLocaleDateString('es-NI') : 'N/A'}</p></div><div class="text-right"><p class="font-medium">Total: ${moneda}${(pedido.monto_total||0).toFixed(2)}</p><p class="text-sm font-semibold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}">Saldo: ${moneda}${saldo.toFixed(2)}</p></div></div>`;
                     modalBody.appendChild(item);
                 });
             }
             detailsModal.classList.remove('hidden'); detailsModal.classList.add('flex');
         }
-        function closeDetailsModal() { detailsModal.classList.add('hidden'); }
+
         function loadPedidoForEdit(id) { 
             const p = allPedidos.find(p => p.id === id); if(!p) return; 
             showView(pedidosView); 
             document.getElementById('pedido-id-edit').value = id; 
             clienteSelect.value = p.cliente; 
+            monedaSelect.value = p.moneda || 'C$';
+            document.querySelectorAll('.currency-symbol').forEach(el => el.textContent = monedaSelect.value);
             formPedido.fecha_entrega.value = p.fecha_entrega; 
             formPedido.descripcion.value = p.descripcion; 
             descuentoInput.value = p.descuento || ''; 
@@ -444,51 +479,39 @@
             document.getElementById('cancel-edit-btn').classList.remove('hidden'); 
             formPedido.scrollIntoView({ behavior: 'smooth' }); 
         }
-        function resetPedidoForm() { formPedido.reset(); itemsContainer.innerHTML = ''; agregarItem(); calcularTotal(); document.getElementById('pedido-id-edit').value = ''; document.getElementById('abono_inicial').disabled = false; document.getElementById('form-pedido-title').textContent = "Registrar Nuevo Pedido"; document.getElementById('submit-pedido-btn').textContent = "Guardar Pedido"; document.getElementById('cancel-edit-btn').classList.add('hidden'); }
-        document.getElementById('cancel-edit-btn').addEventListener('click', resetPedidoForm);
-        closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
-        detailsModal.addEventListener('click', (e) => { if(e.target === detailsModal) closeDetailsModal(); });
-        closePagoModalBtn.addEventListener('click', closePagoModal);
-        pagoModal.addEventListener('click', (e) => { if(e.target === pagoModal) closePagoModal(); });
-        
-        addItemBtn.addEventListener('click', () => agregarItem(1, '', ''));
-        itemsContainer.addEventListener('input', (e) => {
-            if (e.target.classList.contains('item-cantidad') || e.target.classList.contains('item-precio-unitario')) {
-                const row = e.target.closest('.item-row');
-                const qty = parseFloat(row.querySelector('.item-cantidad').value) || 0;
-                const price = parseFloat(row.querySelector('.item-precio-unitario').value) || 0;
-                row.querySelector('.item-monto-display').textContent = `C$${(qty * price).toFixed(2)}`;
-                calcularTotal();
-            }
-        });
-        itemsContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-item-btn')) {
-                e.target.closest('.item-row').remove();
-                calcularTotal();
-            }
-        });
-        descuentoInput.addEventListener('input', calcularTotal);
-        filtroEstado.addEventListener('change', applyFilters);
-        searchInput.addEventListener('input', applyFilters);
-        listaPedidos.addEventListener('click', async (e) => { const id = e.target.dataset.id; if (!id) return; if (e.target.classList.contains('update-status-btn')) await updateDoc(doc(db, "pedidos", id), { estado: e.target.dataset.status }); else if (e.target.classList.contains('add-payment-btn')) openPagoModal(id); else if (e.target.classList.contains('details-btn')) showDetailsModal(id, allPedidos.find(p=>p.id===id)?.cliente); else if (e.target.classList.contains('delete-btn')) showConfirmModal('¿Eliminar Pedido?', 'No se puede deshacer.', async () => await deleteDoc(doc(db, "pedidos", id))); else if (e.target.classList.contains('edit-btn')) loadPedidoForEdit(id); else if (e.target.classList.contains('print-btn')) generatePdf(id); });
-        
+
+        function resetPedidoForm() { 
+            formPedido.reset(); 
+            monedaSelect.value = 'C$';
+            document.querySelectorAll('.currency-symbol').forEach(el => el.textContent = 'C$');
+            itemsContainer.innerHTML = ''; 
+            agregarItem(); 
+            calcularTotal(); 
+            document.getElementById('pedido-id-edit').value = ''; 
+            document.getElementById('abono_inicial').disabled = false; 
+            document.getElementById('form-pedido-title').textContent = "Registrar Nuevo Pedido"; 
+            document.getElementById('submit-pedido-btn').textContent = "Guardar Pedido"; 
+            document.getElementById('cancel-edit-btn').classList.add('hidden'); 
+        }
+
         async function generatePdf(pedidoId) { 
             const pedido = allPedidos.find(p => p.id === pedidoId); if (!pedido) return; 
             const { jsPDF } = window.jspdf; 
             const receiptContent = document.getElementById('receipt-content'); 
             const cliente = allClientes.find(c => c.nombre === pedido.cliente); 
+            const moneda = pedido.moneda || 'C$';
             const fechaPedido = pedido.fecha_pedido?.toDate ? pedido.fecha_pedido.toDate().toLocaleString('es-NI') : 'N/A'; 
             const fechaEntrega = new Date(pedido.fecha_entrega + 'T00:00:00-06:00').toLocaleDateString('es-NI'); 
             let itemsHtml = pedido.items.map(i => `<tr><td style="text-align: center; vertical-align: top; padding: 4px 2px 2px 0;">${i.cantidad || 1}</td><td style="text-align: left; vertical-align: top; padding: 4px 5px 2px 2px;">${i.descripcion}</td><td style="text-align: right; vertical-align: top; padding: 4px 5px 2px 0;">${parseFloat(i.precio_unitario || i.monto).toFixed(2)}</td><td style="text-align: right; vertical-align: top; padding: 4px 0 2px 0;">${parseFloat(i.monto).toFixed(2)}</td></tr>`).join(''); 
-            let pagosHtml = '<p style="text-align: center;">No hay pagos.</p>'; 
+            let pagosHtml = '<p style="text-align: center;">No hay pagos registrados.</p>'; 
             if(pedido.pagos && pedido.pagos.length > 0){ 
                 pagosHtml = '<table style="width: 100%;">'; 
-                pagosHtml += pedido.pagos.map(p => `<tr><td style="text-align: left;">${p.fecha?.toDate ? p.fecha.toDate().toLocaleDateString('es-NI') : 'Fecha no disp.'}</td><td style="text-align: right;">C$ ${parseFloat(p.monto).toFixed(2)}</td></tr>`).join(''); 
+                pagosHtml += pedido.pagos.map(p => `<tr><td style="text-align: left;">${p.fecha?.toDate ? p.fecha.toDate().toLocaleDateString('es-NI') : 'Fecha no disp.'}</td><td style="text-align: right;">${moneda} ${parseFloat(p.monto).toFixed(2)}</td></tr>`).join(''); 
                 pagosHtml += '</table>'; 
             } 
             const saldo = (pedido.monto_total || 0) - (pedido.total_pagado || 0); 
             receiptContent.innerHTML = ` 
-                <div id="receipt-to-print" style="width: 75mm; font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; padding: 5mm; box-sizing: border-box; color: black;"> 
+                <div id="receipt-to-print" style="width: 78mm; font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; padding: 5mm; box-sizing: border-box; color: black;"> 
                     <div style="text-align: center; margin-bottom: 5mm;"> 
                         <h2 style="font-size: 12px; margin: 0; font-weight: bold;">ARCA DE LA NUEVA ALIANZA</h2> 
                         <p style="font-size: 8px; margin: 2px 0; line-height: 1.2;">Sublimación, Impresión en gran formato de Vinil, Lona Banner y más, Disco Móvil, Música en Vivo, Sistemas informáticos...</p> 
@@ -504,34 +527,34 @@
                     <table style="width:100%;border-collapse:collapse;">
                         <thead>
                             <tr>
-                                <th style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px; width: 10%;">Cant</th>
-                                <th style="text-align:left;border-bottom:1px solid #000;padding-bottom:3px; width: 40%;">Descripción</th>
-                                <th style="text-align:right;border-bottom:1px solid #000;padding-bottom:3px; width: 25%;">P/U</th>
-                                <th style="text-align:right;border-bottom:1px solid #000;padding-bottom:3px; width: 25%;">Monto</th>
+                                <th style="text-align:center;border-bottom:1px solid #000;padding-bottom:3px;">Cant</th>
+                                <th style="text-align:left;border-bottom:1px solid #000;padding-bottom:3px;">Desc.</th>
+                                <th style="text-align:right;border-bottom:1px solid #000;padding-bottom:3px;">P/U</th>
+                                <th style="text-align:right;border-bottom:1px solid #000;padding-bottom:3px;">Monto</th>
                             </tr>
                         </thead>
                         <tbody>${itemsHtml}</tbody>
                     </table> 
                     <hr style="border:0;border-top:1px dashed #000;margin:2mm 0;"> 
                     <table style="width:100%;"> 
-                        <tr><td>Subtotal:</td><td style="text-align:right;">C$ ${parseFloat(pedido.subtotal).toFixed(2)}</td></tr> 
-                        ${pedido.descuento > 0 ? `<tr><td>Descuento:</td><td style="text-align:right;">-C$ ${parseFloat(pedido.descuento).toFixed(2)}</td></tr>` : ''} 
-                        <tr style="font-weight:bold;"><td>TOTAL:</td><td style="text-align:right;">C$ ${parseFloat(pedido.monto_total).toFixed(2)}</td></tr> 
+                        <tr><td>Subtotal:</td><td style="text-align:right;">${moneda} ${parseFloat(pedido.subtotal).toFixed(2)}</td></tr> 
+                        ${pedido.descuento > 0 ? `<tr><td>Descuento:</td><td style="text-align:right;">-${moneda} ${parseFloat(pedido.descuento).toFixed(2)}</td></tr>` : ''} 
+                        <tr style="font-weight:bold;"><td>TOTAL:</td><td style="text-align:right;">${moneda} ${parseFloat(pedido.monto_total).toFixed(2)}</td></tr> 
                     </table> 
                     <hr style="border:0;border-top:1px dashed #000;margin:2mm 0;"> 
                     <h3 style="text-align:center;font-size:12px;margin:2mm 0;font-weight:bold;">ABONOS</h3> ${pagosHtml} 
                     <hr style="border:0;border-top:1px dashed #000;margin:2mm 0;"> 
                     <table style="width:100%;"> 
-                        <tr><td>Total Pagado:</td><td style="text-align:right;">C$ ${parseFloat(pedido.total_pagado || 0).toFixed(2)}</td></tr> 
-                        <tr style="font-weight:bold;font-size:12px;"><td>SALDO:</td><td style="text-align:right;">C$ ${saldo.toFixed(2)}</td></tr> 
+                        <tr><td>Total Pagado:</td><td style="text-align:right;">${moneda} ${parseFloat(pedido.total_pagado || 0).toFixed(2)}</td></tr> 
+                        <tr style="font-weight:bold;font-size:12px;"><td>SALDO:</td><td style="text-align:right;">${moneda} ${saldo.toFixed(2)}</td></tr> 
                     </table> 
-                    <div style="text-align:center;margin-top:5mm;font-size:9px;"><p>¡Gracias!</p></div> 
+                    <div style="text-align:center;margin-top:5mm;font-size:9px;"><p>¡Gracias por su preferencia!</p></div> 
                 </div>`; 
             try { 
                 const el = document.getElementById('receipt-to-print'); 
-                const cvs = await html2canvas(el, { scale: 4 }); 
+                const cvs = await html2canvas(el, { scale: 3 }); 
                 const img = cvs.toDataURL('image/png'); 
-                const pdfW = 75; 
+                const pdfW = 78; 
                 const pdfH = (cvs.height * pdfW) / cvs.width; 
                 const pdf = new jsPDF({ o: 'p', u: 'mm', f: [pdfW, pdfH] }); 
                 pdf.addImage(img, 'PNG', 0, 0, pdfW, pdfH); 
@@ -544,6 +567,7 @@
 
         formPedido.addEventListener('submit', async (e) => {
             e.preventDefault(); if (!currentUser) return;
+            const moneda = monedaSelect.value;
             const items = Array.from(itemsContainer.querySelectorAll('.item-row')).map(row => {
                 const cantidad = parseFloat(row.querySelector('.item-cantidad').value) || 1;
                 const descripcion = row.querySelector('.item-descripcion').value;
@@ -561,13 +585,13 @@
                     const pagado = p.total_pagado || 0;
                     let nvoEstadoPago = 'Pendiente';
                     if (pagado > 0) nvoEstadoPago = pagado >= total ? 'Pagado' : 'Abonado';
-                    const data = { cliente: clienteSelect.value, fecha_entrega: formPedido.fecha_entrega.value, descripcion: formPedido.descripcion.value, items, subtotal: sub, descuento: desc, monto_total: total, estado_pago: nvoEstadoPago };
+                    const data = { cliente: clienteSelect.value, moneda, fecha_entrega: formPedido.fecha_entrega.value, descripcion: formPedido.descripcion.value, items, subtotal: sub, descuento: desc, monto_total: total, estado_pago: nvoEstadoPago };
                     await updateDoc(doc(db, "pedidos", editId), data);
                 } else {
                     const abono = parseFloat(formPedido.abono_inicial.value) || 0;
                     let estadoPago = 'Pendiente';
                     if (abono > 0) estadoPago = abono >= total ? 'Pagado' : 'Abonado';
-                    const data = { cliente: clienteSelect.value, fecha_pedido: serverTimestamp(), fecha_entrega: formPedido.fecha_entrega.value, descripcion: formPedido.descripcion.value, items, subtotal: sub, descuento: desc, monto_total: total, total_pagado: abono, estado: 'En Proceso', estado_pago: estadoPago, userId: currentUser.uid, pagos: abono > 0 ? [{ monto: abono, fecha: Timestamp.now() }] : [] };
+                    const data = { cliente: clienteSelect.value, moneda, fecha_pedido: serverTimestamp(), fecha_entrega: formPedido.fecha_entrega.value, descripcion: formPedido.descripcion.value, items, subtotal: sub, descuento: desc, monto_total: total, total_pagado: abono, estado: 'En Proceso', estado_pago: estadoPago, userId: currentUser.uid, pagos: abono > 0 ? [{ monto: abono, fecha: Timestamp.now() }] : [] };
                     await addDoc(pedidosCollectionRef, data);
                 }
                 resetPedidoForm();
@@ -576,6 +600,31 @@
         
         formPago.addEventListener('submit', async (e) => { e.preventDefault(); const id = pagoPedidoId.value; const monto = parseFloat(pagoMontoInput.value); if (!id || isNaN(monto) || monto <= 0) return; const p = allPedidos.find(p => p.id === id); if (!p) return; const nvoTotalPagado = (p.total_pagado || 0) + monto; const nvoEstadoPago = (nvoTotalPagado >= p.monto_total) ? 'Pagado' : 'Abonado'; try { await updateDoc(doc(db, "pedidos", id), { pagos: arrayUnion({ monto, fecha: Timestamp.now() }), total_pagado: increment(monto), estado_pago: nvoEstadoPago }); closePagoModal(); } catch (e) { console.error("Error al registrar pago:", e); alert("Error: " + e.message); } });
 
+        // --- Eventos Adicionales ---
+        addItemBtn.addEventListener('click', () => agregarItem(1, '', ''));
+        itemsContainer.addEventListener('input', (e) => {
+            if (e.target.classList.contains('item-cantidad') || e.target.classList.contains('item-precio-unitario')) {
+                const row = e.target.closest('.item-row');
+                const qty = parseFloat(row.querySelector('.item-cantidad').value) || 0;
+                const price = parseFloat(row.querySelector('.item-precio-unitario').value) || 0;
+                const symbol = monedaSelect.value;
+                row.querySelector('.item-monto-display').textContent = `${symbol}${(qty * price).toFixed(2)}`;
+                calcularTotal();
+            }
+        });
+        itemsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-item-btn')) {
+                e.target.closest('.item-row').remove();
+                calcularTotal();
+            }
+        });
+        descuentoInput.addEventListener('input', calcularTotal);
+        filtroEstado.addEventListener('change', applyFilters);
+        searchInput.addEventListener('input', applyFilters);
+        listaPedidos.addEventListener('click', async (e) => { const id = e.target.dataset.id; if (!id) return; if (e.target.classList.contains('update-status-btn')) await updateDoc(doc(db, "pedidos", id), { estado: e.target.dataset.status }); else if (e.target.classList.contains('add-payment-btn')) openPagoModal(id); else if (e.target.classList.contains('details-btn')) showDetailsModal(id, allPedidos.find(p=>p.id===id)?.cliente); else if (e.target.classList.contains('delete-btn')) showConfirmModal('¿Eliminar Pedido?', 'No se puede deshacer.', async () => await deleteDoc(doc(db, "pedidos", id))); else if (e.target.classList.contains('edit-btn')) loadPedidoForEdit(id); else if (e.target.classList.contains('print-btn')) generatePdf(id); });
+        closeDetailsModalBtn.addEventListener('click', closeDetailsModal);
+        closePagoModalBtn.addEventListener('click', closePagoModal);
+
         // --- Inicialización ---
         authenticateUser();
         agregarItem(1, '', '');
@@ -583,5 +632,6 @@
     </script>
 </body>
 </html>
+
 
 
