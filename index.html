@@ -535,50 +535,54 @@
             const cli = allClientes.find(c => c.nombre === p.cliente);
             const fPed = p.fecha_pedido?.toDate ? p.fecha_pedido.toDate().toLocaleString('es-NI') : 'N/A';
             
-            content.innerHTML = `<div id="p-pdf" style="width: 78mm; font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; padding: 5mm; color: black; background: white; line-height: 1.2;">
+            content.innerHTML = `<div id="p-pdf" style="width: 78mm; font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; padding: 5mm; color: black; background: white; line-height: 1.3;">
                 <div style="text-align:center; margin-bottom:4mm;">
                     <strong style="font-size:12px;">ARCA DE LA NUEVA ALIANZA</strong><br>
-                    <p style="font-size:8px; margin: 2px 0;">Sublimación, Impresión en gran formato de Vinil, Lona Banner y más, Disco Móvil, Música en Vivo, Sistemas informáticos...</p>
+                    <p style="font-size:8px; margin: 3px 0; color: #333;">Sublimación, Impresión en gran formato de Vinil, Lona Banner y más, Disco Móvil, Música en Vivo, Sistemas informáticos...</p>
                     <strong style="font-size:10px;">Comprobante de Pedido</strong>
                 </div>
-                <div style="border-top:1px dashed #000; margin: 2mm 0;"></div>
-                <p style="margin: 1mm 0;"><strong>Cliente:</strong> ${p.cliente}</p>
-                <p style="margin: 1mm 0;"><strong>Tel:</strong> ${cli?.telefono || 'N/A'}</p>
-                <p style="margin: 1mm 0;"><strong>F. Pedido:</strong> ${fPed}</p>
-                <p style="margin: 1mm 0;"><strong>F. Entrega:</strong> ${p.fecha_entrega}</p>
-                <div style="border-top:1px dashed #000; margin: 2mm 0;"></div>
-                <table style="width:100%; font-size:9px; border-collapse:collapse; margin: 2mm 0;">
+                <div style="border-top:1px dashed #000; margin-bottom: 3mm;"></div>
+                <p style="margin: 2px 0;"><strong>Cliente:</strong> ${p.cliente}</p>
+                <p style="margin: 2px 0;"><strong>Tel:</strong> ${cli?.telefono || 'N/A'}</p>
+                <p style="margin: 2px 0;"><strong>F. Pedido:</strong> ${fPed}</p>
+                <p style="margin: 2px 0;"><strong>F. Entrega:</strong> ${p.fecha_entrega}</p>
+                <div style="border-top:1px dashed #000; margin-top: 3mm; margin-bottom: 3mm;"></div>
+                <table style="width:100%; font-size:9px; border-collapse:collapse; margin-bottom: 2mm;">
                     <thead>
-                        <tr style="border-bottom: 1px solid #000;">
-                            <th align="center" style="padding: 2px 0;">Cant</th>
-                            <th align="left" style="padding: 2px 5px;">Desc</th>
-                            <th align="right" style="padding: 2px 0;">Monto</th>
+                        <tr>
+                            <th align="center" style="border-bottom: 1px solid #000; padding: 5px 0; font-weight: bold;">Cant</th>
+                            <th align="left" style="border-bottom: 1px solid #000; padding: 5px 5px; font-weight: bold;">Desc</th>
+                            <th align="right" style="border-bottom: 1px solid #000; padding: 5px 0; font-weight: bold;">Monto</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${p.items.map(i => `
                             <tr>
-                                <td align="center" style="padding: 3px 0; vertical-align: top;">${i.cantidad}</td>
-                                <td align="left" style="padding: 3px 5px; vertical-align: top;">${i.descripcion}</td>
-                                <td align="right" style="padding: 3px 0; vertical-align: top;">${i.monto.toFixed(2)}</td>
+                                <td align="center" style="padding: 4px 0; vertical-align: top;">${i.cantidad}</td>
+                                <td align="left" style="padding: 4px 5px; vertical-align: top;">${i.descripcion}</td>
+                                <td align="right" style="padding: 4px 0; vertical-align: top;">${i.monto.toFixed(2)}</td>
                             </tr>`).join('')}
                     </tbody>
                 </table>
-                <div style="border-top:1px dashed #000; margin: 2mm 0;"></div>
+                <div style="border-top:1px dashed #000; margin-top: 2mm; margin-bottom: 2mm;"></div>
                 <div style="text-align:right;">
                     Subtotal: ${p.moneda}${p.subtotal.toFixed(2)}<br>
                     Descuento: -${p.moneda}${p.descuento.toFixed(2)}<br>
                     <strong style="font-size: 11px;">TOTAL: ${p.moneda}${p.monto_total.toFixed(2)}</strong>
                 </div>
-                <div style="border-top:1px dashed #000; margin: 2mm 0;"></div>
+                <div style="border-top:1px dashed #000; margin-top: 2mm; margin-bottom: 2mm;"></div>
                 <div style="text-align:right;">
                     Pagado: ${p.moneda}${p.total_pagado.toFixed(2)}<br>
-                    <strong style="font-size: 11px; color: #000;">SALDO: ${p.moneda}${(p.monto_total - p.total_pagado).toFixed(2)}</strong>
+                    <strong style="font-size: 11px;">SALDO: ${p.moneda}${(p.monto_total - p.total_pagado).toFixed(2)}</strong>
                 </div>
-                <div style="text-align:center; margin-top:5mm; font-size:9px;">¡Gracias por su preferencia!</div>
+                <div style="text-align:center; margin-top:6mm; font-size:9px;">¡Gracias por su preferencia!</div>
             </div>`;
 
-            const canvas = await html2canvas(document.getElementById('p-pdf'), { scale: 3 });
+            const canvas = await html2canvas(document.getElementById('p-pdf'), { 
+                scale: 3,
+                useCORS: true,
+                backgroundColor: "#ffffff"
+            });
             const img = canvas.toDataURL('image/png');
             const pdf = new jsPDF({ unit: 'mm', format: [78, (canvas.height * 78) / canvas.width] });
             pdf.addImage(img, 'PNG', 0, 0, 78, (canvas.height * 78) / canvas.width);
