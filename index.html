@@ -41,14 +41,18 @@
 
         <!-- Vista del Menú Principal -->
         <div id="main-menu-view">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 <button id="goto-clientes-btn" class="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow text-center border-t-4 border-indigo-500">
-                    <h2 class="text-2xl font-semibold text-gray-800">Gestión de Clientes</h2>
-                    <p class="text-gray-600 mt-2">Crear, editar y ver historial.</p>
+                    <h2 class="text-xl font-semibold text-gray-800">Gestión de Clientes</h2>
+                    <p class="text-gray-500 mt-2">Crear, editar y ver historial.</p>
                 </button>
                 <button id="goto-pedidos-btn" class="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow text-center border-t-4 border-emerald-500">
-                    <h2 class="text-2xl font-semibold text-gray-800">Gestión de Pedidos</h2>
-                    <p class="text-gray-600 mt-2">Registrar ventas y producción.</p>
+                    <h2 class="text-xl font-semibold text-gray-800">Gestión de Pedidos</h2>
+                    <p class="text-gray-500 mt-2">Registrar ventas y producción.</p>
+                </button>
+                <button id="goto-cuentas-btn" class="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow text-center border-t-4 border-red-500">
+                    <h2 class="text-xl font-semibold text-gray-800">Cuentas por Cobrar</h2>
+                    <p class="text-gray-500 mt-2">Control de saldos y morosidad.</p>
                 </button>
             </div>
         </div>
@@ -153,6 +157,32 @@
                 <div id="lista-pedidos" class="space-y-4"></div>
             </div>
         </div>
+
+        <!-- Vista de Cuentas por Cobrar -->
+        <div id="cuentas-view" class="hidden">
+            <button class="back-to-menu mb-6 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700">&larr; Volver al Menú</button>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8 max-w-4xl mx-auto border-l-8 border-red-500">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Resumen de Morosidad</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-4 bg-red-50 rounded-lg">
+                        <p class="text-sm text-red-600 font-bold uppercase tracking-wider">Total Pendiente (C$)</p>
+                        <p id="total-mora-cs" class="text-2xl font-black text-red-700">C$0.00</p>
+                    </div>
+                    <div class="p-4 bg-orange-50 rounded-lg">
+                        <p class="text-sm text-orange-600 font-bold uppercase tracking-wider">Total Pendiente ($)</p>
+                        <p id="total-mora-usd" class="text-2xl font-black text-orange-700">$0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold">Clientes con Saldo Pendiente</h3>
+                </div>
+                <div id="lista-cuentas" class="space-y-4"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Modals -->
@@ -194,7 +224,7 @@
             <p id="confirm-modal-text" class="text-gray-600 mb-6"></p>
             <div class="flex justify-center gap-3">
                 <button id="confirm-modal-cancel-btn" class="bg-gray-200 px-6 py-2 rounded-lg">No</button>
-                <button id="confirm-modal-confirm-btn" class="bg-red-600 text-white px-6 py-2 rounded-lg">Sí, eliminar</button>
+                <button id="confirm-modal-confirm-btn" class="bg-red-600 text-white px-6 py-2 rounded-lg">Confirmar</button>
             </div>
         </div>
     </div>
@@ -235,12 +265,26 @@
             }
         });
 
+        // NAVEGACIÓN
         function showView(view) {
             document.getElementById('main-menu-view').classList.add('hidden');
             document.getElementById('clientes-view').classList.add('hidden');
             document.getElementById('pedidos-view').classList.add('hidden');
+            document.getElementById('cuentas-view').classList.add('hidden');
             view.classList.remove('hidden');
         }
+
+        document.getElementById('goto-clientes-btn').onclick = () => showView(document.getElementById('clientes-view'));
+        document.getElementById('goto-pedidos-btn').onclick = () => showView(document.getElementById('pedidos-view'));
+        document.getElementById('goto-cuentas-btn').onclick = () => {
+            showView(document.getElementById('cuentas-view'));
+            renderCuentasPorCobrar();
+        };
+        
+        document.querySelectorAll('.back-to-menu').forEach(b => b.onclick = () => {
+            returnToPedidosView = false;
+            showView(document.getElementById('main-menu-view'));
+        });
 
         window.closeDetailsModal = () => {
             document.getElementById('details-modal').classList.add('hidden');
@@ -258,19 +302,7 @@
             setTimeout(() => toast.style.display = 'none', 3000);
         };
 
-        document.getElementById('goto-clientes-btn').onclick = () => showView(document.getElementById('clientes-view'));
-        document.getElementById('goto-pedidos-btn').onclick = () => showView(document.getElementById('pedidos-view'));
-        document.querySelectorAll('.back-to-menu').forEach(b => b.onclick = () => {
-            returnToPedidosView = false;
-            showView(document.getElementById('main-menu-view'));
-        });
-        document.getElementById('quick-create-cliente-btn').onclick = () => {
-            returnToPedidosView = true;
-            showView(document.getElementById('clientes-view'));
-        };
-        document.getElementById('close-details-modal-btn').onclick = window.closeDetailsModal;
-        document.getElementById('close-pago-modal-btn').onclick = window.closePagoModal;
-
+        // GESTIÓN DE CLIENTES
         function listenToClientes() {
             onSnapshot(clientesRef, (snap) => {
                 allClientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -362,22 +394,22 @@
             
             if (nameSpan) nameSpan.textContent = nombre;
             
-            body.innerHTML = history.length ? '' : '<p class="text-gray-500 italic">No hay pedidos registrados para este cliente.</p>';
+            body.innerHTML = history.length ? '' : '<p class="text-gray-500 italic">No hay pedidos registrados.</p>';
             
             history.sort((a, b) => new Date(b.fecha_entrega) - new Date(a.fecha_entrega)).forEach(p => {
                 const saldo = p.monto_total - p.total_pagado;
                 const d = document.createElement('div');
-                d.className = 'mb-4 p-4 border rounded-lg bg-gray-50 shadow-sm';
+                d.className = `mb-4 p-4 border rounded-lg bg-gray-50 shadow-sm ${p.estado === 'Anulado' ? 'opacity-50 grayscale' : ''}`;
                 d.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="font-bold text-indigo-700">${p.descripcion}</p>
+                            <p class="font-bold text-indigo-700">${p.descripcion} ${p.estado === 'Anulado' ? '(ANULADO)' : ''}</p>
                             <p class="text-xs text-gray-500 mt-1">Entrega: ${p.fecha_entrega}</p>
                         </div>
                         <div class="text-right">
                             <p class="font-bold">${p.moneda || 'C$'}${p.monto_total.toFixed(2)}</p>
                             <p class="text-sm font-semibold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}">
-                                ${saldo > 0 ? 'Pendiente: ' + (p.moneda || 'C$') + saldo.toFixed(2) : 'PAGADO'}
+                                ${p.estado === 'Anulado' ? '---' : (saldo > 0 ? 'Debe: ' + (p.moneda || 'C$') + saldo.toFixed(2) : 'PAGADO')}
                             </p>
                         </div>
                     </div>
@@ -392,6 +424,8 @@
             onSnapshot(pedidosRef, (snap) => {
                 allPedidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderPedidos();
+                // Si la vista actual es cuentas, actualizarla también
+                if(!document.getElementById('cuentas-view').classList.contains('hidden')) renderCuentasPorCobrar();
             });
         }
 
@@ -401,8 +435,9 @@
             list.innerHTML = '';
             
             const filtrados = allPedidos.filter(p => 
-                p.cliente.toLowerCase().includes(search) || 
-                p.descripcion.toLowerCase().includes(search)
+                (p.cliente.toLowerCase().includes(search) || 
+                p.descripcion.toLowerCase().includes(search)) && 
+                p.estado !== 'Anulado'
             );
 
             filtrados.sort((a,b) => new Date(a.fecha_entrega) - new Date(b.fecha_entrega)).forEach(p => {
@@ -411,49 +446,156 @@
                 div.innerHTML = `<div class="flex justify-between"><div><p class="font-bold text-indigo-700">${p.cliente}</p><p class="text-sm">${p.descripcion}</p></div>
                 <div class="text-right"><p class="font-bold">${p.moneda}${p.monto_total.toFixed(2)}</p><p class="text-xs ${p.monto_total - p.total_pagado > 0 ? 'text-red-600' : 'text-green-600'}">Saldo: ${p.moneda}${(p.monto_total - p.total_pagado).toFixed(2)}</p></div></div>
                 <div class="mt-3 flex gap-2 justify-end flex-wrap">
-                    <button onclick="window.sendWhatsApp('${p.id}')" class="text-xs bg-green-100 text-green-800 p-1 px-3 rounded font-medium flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                        Notificar Cliente
-                    </button>
+                    <button onclick="window.sendWhatsApp('${p.id}')" class="text-xs bg-green-100 text-green-800 p-1 px-3 rounded font-medium flex items-center gap-1">Notificar</button>
                     <button onclick="window.sendWhatsApp('${p.id}', true)" class="text-xs bg-blue-100 text-blue-800 p-1 px-3 rounded font-medium">Auto-Aviso</button>
                     <button onclick="window.generatePdf('${p.id}')" class="text-xs bg-gray-100 p-1 px-3 rounded font-medium">Ticket</button>
                     ${p.monto_total - p.total_pagado > 0 ? `<button onclick="window.openAbono('${p.id}')" class="text-xs bg-emerald-100 text-emerald-800 p-1 px-3 rounded font-medium">Abono</button>` : ''}
                     <button onclick="window.editPedido('${p.id}')" class="text-xs bg-yellow-100 text-yellow-800 p-1 px-3 rounded font-medium">Editar</button>
+                    <button onclick="window.anularPedido('${p.id}')" class="text-xs bg-red-100 text-red-800 p-1 px-3 rounded font-medium">Anular</button>
                 </div>`;
                 list.appendChild(div);
             });
         }
-        
-        document.getElementById('search-input').oninput = renderPedidos;
+
+        // CUENTAS POR COBRAR (NUEVO)
+        function renderCuentasPorCobrar() {
+            const list = document.getElementById('lista-cuentas');
+            const totalCsDisplay = document.getElementById('total-mora-cs');
+            const totalUsdDisplay = document.getElementById('total-mora-usd');
+            
+            list.innerHTML = '';
+            
+            // Filtrar solo pedidos con saldo pendiente y que NO estén anulados
+            const pedidosPendientes = allPedidos.filter(p => (p.monto_total > p.total_pagado) && p.estado !== 'Anulado');
+            
+            if (pedidosPendientes.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500 py-10">¡Excelente! No tienes cuentas por cobrar pendientes.</p>';
+                totalCsDisplay.textContent = 'C$0.00';
+                totalUsdDisplay.textContent = '$0.00';
+                return;
+            }
+
+            // Agrupar por cliente
+            const deudasPorCliente = {};
+            let globalCs = 0;
+            let globalUsd = 0;
+
+            pedidosPendientes.forEach(p => {
+                if (!deudasPorCliente[p.cliente]) {
+                    deudasPorCliente[p.cliente] = {
+                        cs: 0,
+                        usd: 0,
+                        pedidos: []
+                    };
+                }
+                const saldo = p.monto_total - p.total_pagado;
+                if (p.moneda === 'C$') {
+                    deudasPorCliente[p.cliente].cs += saldo;
+                    globalCs += saldo;
+                } else {
+                    deudasPorCliente[p.cliente].usd += saldo;
+                    globalUsd += saldo;
+                }
+                deudasPorCliente[p.cliente].pedidos.push(p);
+            });
+
+            totalCsDisplay.textContent = `C$${globalCs.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            totalUsdDisplay.textContent = `$${globalUsd.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+            // Renderizar tarjetas por cliente
+            Object.keys(deudasPorCliente).sort().forEach(clienteNombre => {
+                const data = deudasPorCliente[clienteNombre];
+                const card = document.createElement('div');
+                card.className = 'border rounded-xl bg-white overflow-hidden shadow-sm';
+                
+                let resumenMora = '';
+                if(data.cs > 0) resumenMora += `<span class="text-red-700 font-bold mr-3">C$${data.cs.toFixed(2)}</span>`;
+                if(data.usd > 0) resumenMora += `<span class="text-orange-700 font-bold">$${data.usd.toFixed(2)}</span>`;
+
+                card.innerHTML = `
+                    <div class="bg-gray-50 p-4 flex justify-between items-center border-b">
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800">${clienteNombre}</h4>
+                            <p class="text-sm text-gray-500">${data.pedidos.length} factura(s) pendiente(s)</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-bold text-gray-400 uppercase">Total Deuda</p>
+                            ${resumenMora}
+                        </div>
+                    </div>
+                    <div class="p-2 space-y-2">
+                        ${data.pedidos.map(p => {
+                            const saldo = p.monto_total - p.total_pagado;
+                            return `
+                            <div class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg border border-transparent hover:border-gray-200 transition-all">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-700">${p.descripcion}</p>
+                                    <p class="text-xs text-gray-400">Entrega: ${p.fecha_entrega}</p>
+                                </div>
+                                <div class="text-right mr-4">
+                                    <p class="text-sm font-black text-red-600">${p.moneda}${saldo.toFixed(2)}</p>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="window.sendWhatsApp('${p.id}')" class="p-1.5 bg-green-100 text-green-700 rounded-md" title="Cobrar por WhatsApp">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                    </button>
+                                    <button onclick="window.openAbono('${p.id}')" class="p-1.5 bg-emerald-100 text-emerald-700 rounded-md" title="Registrar Pago">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 8V7m0 1v1m0 5v1m0-1V12m3.366-3.366L14 10m-3.366 3.366L10 14m6-6l1 1m-7 7l-1-1m10-10l-1 1M5 19l1-1M19 5l-1 1M5 5l1 1M19 19l-1-1"/></svg>
+                                    </button>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
 
         // WHATSAPP
         window.sendWhatsApp = (id, toBusiness = false) => {
             const p = allPedidos.find(x => x.id === id);
             const cli = allClientes.find(c => c.nombre === p.cliente);
-            
-            // TU NÚMERO DE NEGOCIO (Actualizado)
             const miNumero = "50586486539";
-
             let phone = toBusiness ? miNumero : (cli?.telefono ? cli.telefono.replace(/\D/g, '') : "");
-            
-            if (!toBusiness && !phone) {
-                alert("El cliente no tiene un número de teléfono registrado.");
-                return;
-            }
-
+            if (!toBusiness && !phone) { alert("El cliente no tiene teléfono."); return; }
             const saldo = p.monto_total - p.total_pagado;
             let mensaje = "";
-
             if (toBusiness) {
                 mensaje = `🔔 *RECORDATORIO DE NEGOCIO*\nCliente: *${p.cliente}*\nPedido: ${p.descripcion}\nTotal: ${p.moneda}${p.monto_total.toFixed(2)}\nSaldo: ${p.moneda}${saldo.toFixed(2)}`;
             } else {
                 mensaje = `Hola *${p.cliente}*, te saludamos de *ARCA DE LA NUEVA ALIANZA*.\n\nQueremos informarte sobre tu pedido de: *${p.descripcion}*.\nTotal: ${p.moneda}${p.monto_total.toFixed(2)}\nSaldo pendiente: *${p.moneda}${saldo.toFixed(2)}*\nFecha de entrega: ${p.fecha_entrega}\n\n¡Gracias por tu preferencia!`;
             }
-
-            const encodedMsg = encodeURIComponent(mensaje);
-            window.open(`https://wa.me/${phone}?text=${encodedMsg}`, '_blank');
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`, '_blank');
         };
 
+        // GESTIÓN DE ORDENES (EDITAR/ANULAR)
+        window.anularPedido = (id) => {
+            const cm = document.getElementById('confirm-modal');
+            cm.querySelector('#confirm-modal-title').textContent = "¿Anular Pedido?";
+            cm.querySelector('#confirm-modal-text').textContent = "El pedido dejará de aparecer en producción y cuentas por cobrar, pero quedará en el historial del cliente.";
+            cm.classList.remove('hidden'); cm.classList.add('flex');
+            
+            const confirmBtn = document.getElementById('confirm-modal-confirm-btn');
+            const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+            
+            const handleConfirm = async () => {
+                try {
+                    await updateDoc(doc(db, 'pedidos', id), { estado: 'Anulado' });
+                    showToast();
+                    closeConfirm();
+                } catch(e) { alert(e.message); }
+            };
+            
+            const closeConfirm = () => {
+                cm.classList.add('hidden'); cm.classList.remove('flex');
+                confirmBtn.removeEventListener('click', handleConfirm);
+            };
+            
+            confirmBtn.onclick = handleConfirm;
+            cancelBtn.onclick = closeConfirm;
+        };
+
+        // FORMULARIO PEDIDOS
         window.calcTotal = () => {
             let sub = 0;
             document.querySelectorAll('.item-row').forEach(r => {
@@ -507,11 +649,9 @@
                 precio_unitario: parseFloat(r.querySelector('.item-prec').value) || 0,
                 monto: (parseFloat(r.querySelector('.item-cant').value) || 1) * (parseFloat(r.querySelector('.item-prec').value) || 0)
             })).filter(i => i.descripcion);
-
             const sub = items.reduce((s,i) => s + i.monto, 0);
             const desc = parseFloat(document.getElementById('descuento-input').value) || 0;
             const total = sub - desc;
-
             try {
                 if(id) {
                     await updateDoc(doc(db, 'pedidos', id), { 
@@ -546,8 +686,6 @@
             document.getElementById('form-pedido-title').textContent = "Nuevo Pedido";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
         }
-        
-        document.getElementById('cancel-edit-btn').onclick = resetPedidoForm;
 
         window.openAbono = (id) => {
             const p = allPedidos.find(x => x.id === id);
@@ -584,58 +722,10 @@
             const content = document.getElementById('receipt-content');
             const cli = allClientes.find(c => c.nombre === p.cliente);
             const fPed = p.fecha_pedido?.toDate ? p.fecha_pedido.toDate().toLocaleString('es-NI') : 'N/A';
-            
-            content.innerHTML = `<div id="p-pdf" style="width: 78mm; font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; padding: 5mm; color: black; background: white; line-height: 1.3;">
-                <div style="text-align:center; margin-bottom:4mm;">
-                    <strong style="font-size:12px;">ARCA DE LA NUEVA ALIANZA</strong><br>
-                    <p style="font-size:8px; margin: 3px 0; color: #333;">Sublimación, Impresión en gran formato de Vinil, Lona Banner y más, Disco Móvil, Música en Vivo, Sistemas informáticos...</p>
-                    <strong style="font-size:10px;">Comprobante de Pedido</strong>
-                </div>
-                <div style="border-top:1px dashed #000; margin-bottom: 3mm;"></div>
-                <p style="margin: 2px 0;"><strong>Cliente:</strong> ${p.cliente}</p>
-                <p style="margin: 2px 0;"><strong>Tel:</strong> ${cli?.telefono || 'N/A'}</p>
-                <p style="margin: 2px 0;"><strong>F. Pedido:</strong> ${fPed}</p>
-                <p style="margin: 2px 0;"><strong>F. Entrega:</strong> ${p.fecha_entrega}</p>
-                <div style="border-top:1px dashed #000; margin-top: 3mm; margin-bottom: 3mm;"></div>
-                <table style="width:100%; font-size:9px; border-collapse:collapse; margin-bottom: 2mm;">
-                    <thead>
-                        <tr>
-                            <th align="center" style="border-bottom: 1px solid #000; padding: 5px 0; font-weight: bold;">Cant</th>
-                            <th align="left" style="border-bottom: 1px solid #000; padding: 5px 5px; font-weight: bold;">Desc</th>
-                            <th align="right" style="border-bottom: 1px solid #000; padding: 5px 0; font-weight: bold;">Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${p.items.map(i => `
-                            <tr>
-                                <td align="center" style="padding: 4px 0; vertical-align: top;">${i.cantidad}</td>
-                                <td align="left" style="padding: 4px 5px; vertical-align: top;">${i.descripcion}</td>
-                                <td align="right" style="padding: 4px 0; vertical-align: top;">${i.monto.toFixed(2)}</td>
-                            </tr>`).join('')}
-                    </tbody>
-                </table>
-                <div style="border-top:1px dashed #000; margin-top: 2mm; margin-bottom: 2mm;"></div>
-                <div style="text-align:right;">
-                    Subtotal: ${p.moneda}${p.subtotal.toFixed(2)}<br>
-                    Descuento: -${p.moneda}${p.descuento.toFixed(2)}<br>
-                    <strong style="font-size: 11px;">TOTAL: ${p.moneda}${p.monto_total.toFixed(2)}</strong>
-                </div>
-                <div style="border-top:1px dashed #000; margin-top: 2mm; margin-bottom: 2mm;"></div>
-                <div style="text-align:right;">
-                    Pagado: ${p.moneda}${p.total_pagado.toFixed(2)}<br>
-                    <strong style="font-size: 11px;">SALDO: ${p.moneda}${(p.monto_total - p.total_pagado).toFixed(2)}</strong>
-                </div>
-                <div style="text-align:center; margin-top:6mm; font-size:9px;">¡Gracias por su preferencia!</div>
-            </div>`;
-
-            const canvas = await html2canvas(document.getElementById('p-pdf'), { 
-                scale: 3,
-                useCORS: true,
-                backgroundColor: "#ffffff"
-            });
-            const img = canvas.toDataURL('image/png');
+            content.innerHTML = `<div id="p-pdf" style="width: 78mm; font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; padding: 5mm; color: black; background: white; line-height: 1.3;"><div style="text-align:center; margin-bottom:4mm;"><strong style="font-size:12px;">ARCA DE LA NUEVA ALIANZA</strong><br><p style="font-size:8px; margin: 3px 0; color: #333;">Sublimación, Impresión en gran formato, Disco Móvil, Sistemas...</p><strong>Comprobante de Pedido</strong></div><div style="border-top:1px dashed #000; margin-bottom: 3mm;"></div><p><strong>Cliente:</strong> ${p.cliente}<br><strong>F. Pedido:</strong> ${fPed}<br><strong>Entrega:</strong> ${p.fecha_entrega}</p><div style="border-top:1px dashed #000; margin: 3mm 0;"></div><table style="width:100%; font-size:9px;"><thead><tr><th align="center">Cant</th><th align="left">Desc</th><th align="right">Monto</th></tr></thead><tbody>${p.items.map(i => `<tr><td align="center">${i.cantidad}</td><td>${i.descripcion}</td><td align="right">${i.monto.toFixed(2)}</td></tr>`).join('')}</tbody></table><div style="border-top:1px dashed #000; margin: 2mm 0;"></div><div style="text-align:right;">Subtotal: ${p.moneda}${p.subtotal.toFixed(2)}<br>Descuento: -${p.moneda}${p.descuento.toFixed(2)}<br><strong>TOTAL: ${p.moneda}${p.monto_total.toFixed(2)}</strong></div><div style="border-top:1px dashed #000; margin: 2mm 0;"></div><div style="text-align:right;">Pagado: ${p.moneda}${p.total_pagado.toFixed(2)}<br><strong>SALDO: ${p.moneda}${(p.monto_total - p.total_pagado).toFixed(2)}</strong></div><div style="text-align:center; margin-top:6mm;">¡Gracias!</div></div>`;
+            const canvas = await html2canvas(document.getElementById('p-pdf'), { scale: 3 });
             const pdf = new jsPDF({ unit: 'mm', format: [78, (canvas.height * 78) / canvas.width] });
-            pdf.addImage(img, 'PNG', 0, 0, 78, (canvas.height * 78) / canvas.width);
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 78, (canvas.height * 78) / canvas.width);
             pdf.save(`Ticket_${p.cliente}.pdf`);
         };
 
