@@ -27,79 +27,97 @@
             animation: slideIn 0.3s ease-out;
         }
         @keyframes slideIn { from { transform: translateY(100px); } to { transform: translateY(0); } }
+        
+        .status-badge { padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .status-pendiente { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .status-terminado { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .status-entregado { background-color: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background-color: white !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <div id="toast" class="success-toast">¡Guardado con éxito!</div>
+    <div id="toast" class="success-toast">¡Acción realizada con éxito!</div>
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="text-center mb-8">
+        <header class="text-center mb-8 no-print">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Gestor de Pedidos</h1>
-            <p class="text-gray-600 mt-2">ARCA DE LA NUEVA ALIANZA</p>
+            <p class="text-gray-600 mt-2 font-medium tracking-widest uppercase">ARCA DE LA NUEVA ALIANZA</p>
         </header>
 
-        <!-- Vista del Menú Principal -->
-        <div id="main-menu-view">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                <button id="goto-clientes-btn" class="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow text-center border-t-4 border-indigo-500">
-                    <h2 class="text-xl font-semibold text-gray-800">Gestión de Clientes</h2>
-                    <p class="text-gray-500 mt-2">Crear, editar y ver historial.</p>
+        <!-- Menú Principal -->
+        <div id="main-menu-view" class="no-print">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+                <button id="goto-clientes-btn" class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-all text-center border-t-4 border-indigo-500 group">
+                    <h2 class="text-lg font-bold text-gray-800 group-hover:text-indigo-600">Clientes</h2>
+                    <p class="text-xs text-gray-500 mt-1">Directorio e historial.</p>
                 </button>
-                <button id="goto-pedidos-btn" class="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow text-center border-t-4 border-emerald-500">
-                    <h2 class="text-xl font-semibold text-gray-800">Gestión de Pedidos</h2>
-                    <p class="text-gray-500 mt-2">Registrar ventas y producción.</p>
+                <button id="goto-pedidos-btn" class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-all text-center border-t-4 border-emerald-500 group">
+                    <h2 class="text-lg font-bold text-gray-800 group-hover:text-emerald-600">Producción</h2>
+                    <p class="text-xs text-gray-500 mt-1">Órdenes y estados.</p>
                 </button>
-                <button id="goto-cuentas-btn" class="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow text-center border-t-4 border-red-500">
-                    <h2 class="text-xl font-semibold text-gray-800">Cuentas por Cobrar</h2>
-                    <p class="text-gray-500 mt-2">Control de saldos y morosidad.</p>
+                <button id="goto-cuentas-btn" class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-all text-center border-t-4 border-red-500 group">
+                    <h2 class="text-lg font-bold text-gray-800 group-hover:text-red-600">Cobranza</h2>
+                    <p class="text-xs text-gray-500 mt-1">Saldos pendientes.</p>
+                </button>
+                <button id="goto-reportes-btn" class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-all text-center border-t-4 border-amber-500 group">
+                    <h2 class="text-lg font-bold text-gray-800 group-hover:text-amber-600">Reportes</h2>
+                    <p class="text-xs text-gray-500 mt-1">PDF y cierres.</p>
                 </button>
             </div>
         </div>
 
-        <!-- Vista de Gestión de Clientes -->
-        <div id="clientes-view" class="hidden">
+        <!-- Vista de Clientes -->
+        <div id="clientes-view" class="hidden no-print">
             <button class="back-to-menu mb-6 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700">&larr; Volver al Menú</button>
-            
             <div class="bg-white p-6 rounded-lg shadow-md mb-8 max-w-2xl mx-auto">
                 <h2 class="text-2xl font-semibold mb-4" id="form-cliente-title">Registrar Nuevo Cliente</h2>
                 <form id="form-cliente">
                     <input type="hidden" id="cliente-id-edit">
                     <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">ID Cliente</label>
-                            <input type="text" id="nuevo-cliente-id" disabled class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">ID</label>
+                                <input type="text" id="nuevo-cliente-id" disabled class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 bg-gray-100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">WhatsApp</label>
+                                <input type="tel" id="nuevo-cliente-telefono" required placeholder="505..." class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3">
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                            <input type="text" id="nuevo-cliente-nombre" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Teléfono (WhatsApp)</label>
-                            <input type="tel" id="nuevo-cliente-telefono" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" id="nuevo-cliente-nombre" required class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3">
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end gap-3">
-                         <button type="button" id="cancel-cliente-edit-btn" class="hidden bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                         <button type="submit" id="submit-cliente-btn" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700">Guardar Cliente</button>
+                         <button type="button" id="cancel-cliente-edit-btn" class="hidden bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm">Cancelar</button>
+                         <button type="submit" id="submit-cliente-btn" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700 text-sm">Guardar Cliente</button>
                     </div>
                 </form>
             </div>
-
             <div class="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
-                <h2 class="text-2xl font-semibold mb-4">Lista de Clientes</h2>
+                <h2 class="text-xl font-bold mb-4">Lista de Clientes</h2>
                 <div id="lista-clientes" class="space-y-3"></div>
             </div>
         </div>
 
-        <!-- Vista de Gestión de Pedidos -->
-        <div id="pedidos-view" class="hidden">
+        <!-- Vista de Pedidos / Producción -->
+        <div id="pedidos-view" class="hidden no-print">
             <button class="back-to-menu mb-6 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700">&larr; Volver al Menú</button>
 
+            <!-- Formulario de Pedido -->
             <div id="form-container-pedido" class="bg-white p-6 rounded-lg shadow-md mb-8 max-w-2xl mx-auto">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-semibold" id="form-pedido-title">Nuevo Pedido</h2>
-                    <select id="moneda-select" class="border rounded-md py-1 px-2 text-sm">
+                    <select id="moneda-select" class="border rounded-md py-1 px-2 text-sm outline-none font-bold">
                         <option value="C$">C$ - Córdobas</option>
                         <option value="$">$ - Dólares</option>
                     </select>
@@ -110,121 +128,169 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Cliente</label>
                             <div class="flex items-center gap-2 mt-1">
-                                <select id="cliente-select" required class="block w-full border border-gray-300 rounded-md py-2 px-3">
+                                <select id="cliente-select" required class="block w-full border border-gray-300 rounded-md py-2 px-3 outline-none">
                                     <option value="" disabled selected>Selecciona cliente</option>
                                 </select>
-                                <button type="button" id="quick-create-cliente-btn" class="bg-teal-500 text-white font-bold py-2 px-3 rounded-lg">+</button>
+                                <button type="button" id="quick-create-cliente-btn" class="bg-teal-500 text-white font-bold py-2 px-3 rounded-lg shadow-sm hover:bg-teal-600 transition-colors" title="Nuevo Cliente">+</button>
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Fecha de Entrega</label>
-                            <input type="date" id="fecha_entrega" required class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3">
+                            <input type="date" id="fecha_entrega" required class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 outline-none">
                         </div>
                     </div>
                     <div class="mt-4">
                         <label class="block text-sm font-medium text-gray-700">Descripción General</label>
-                        <textarea id="descripcion" rows="2" required class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3"></textarea>
+                        <textarea id="descripcion" rows="2" required placeholder="Ej: Camisetas..." class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 outline-none"></textarea>
                     </div>
                     <div class="mt-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Productos / Servicios</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 font-bold">Productos</label>
                         <div id="items-container" class="space-y-2"></div>
-                        <button type="button" id="add-item-btn" class="mt-2 text-sm text-indigo-600 font-semibold">+ Agregar Producto</button>
+                        <button type="button" id="add-item-btn" class="mt-2 text-sm text-indigo-600 font-bold hover:underline">+ Agregar Fila</button>
                     </div>
-                    <div class="mt-4 space-y-2 bg-gray-50 p-4 rounded-md">
-                        <div class="flex justify-between font-medium"><span>Subtotal:</span><span id="subtotal-display">0.00</span></div>
-                        <div class="flex justify-between items-center gap-4">
+                    <div class="mt-4 space-y-2 bg-gray-50 p-4 rounded-md border">
+                        <div class="flex justify-between"><span>Subtotal:</span><span id="subtotal-display" class="font-bold">0.00</span></div>
+                        <div class="flex justify-between items-center">
                             <span>Descuento:</span>
-                            <div class="flex items-center"><span class="currency-symbol mr-1">C$</span><input type="number" id="descuento-input" step="0.01" class="w-24 border rounded px-2 py-1 text-right"></div>
+                            <div class="flex items-center"><span class="currency-symbol mr-1 text-xs">C$</span><input type="number" id="descuento-input" step="0.01" value="0" class="w-20 border rounded px-2 py-1 text-right text-sm outline-none"></div>
                         </div>
-                        <div class="flex justify-between text-xl font-bold border-t pt-2"><span>TOTAL:</span><span id="monto-total-pagar-display">0.00</span></div>
+                        <div class="flex justify-between text-xl font-black border-t pt-2 text-indigo-900"><span>TOTAL:</span><span id="monto-total-pagar-display">0.00</span></div>
                     </div>
                     <div class="mt-4">
                         <label class="block text-sm font-medium text-gray-700">Abono Inicial</label>
-                        <div class="flex items-center mt-1"><span class="currency-symbol mr-1">C$</span><input type="number" id="abono_inicial" step="0.01" class="w-full border rounded py-2 px-3"></div>
+                        <div class="flex items-center mt-1"><span class="currency-symbol mr-1">C$</span><input type="number" id="abono_inicial" step="0.01" value="0" class="w-full border rounded py-2 px-3 font-bold text-green-700"></div>
                     </div>
                     <div class="mt-6 flex justify-end gap-3">
-                        <button type="button" id="cancel-edit-btn" class="hidden bg-gray-300 py-2 px-4 rounded-lg">Cancelar</button>
-                        <button type="submit" id="submit-pedido-btn" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg shadow-md">Guardar Pedido</button>
+                        <button type="button" id="cancel-edit-btn" class="hidden bg-gray-300 py-2 px-4 rounded-lg text-sm font-bold">Cancelar</button>
+                        <button type="submit" id="submit-pedido-btn" class="bg-indigo-600 text-white font-black py-3 px-8 rounded-xl shadow-lg hover:bg-indigo-700 transition-all text-xs">GUARDAR PEDIDO</button>
                     </div>
                 </form>
             </div>
 
-            <div class="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
-                <div class="flex flex-col sm:flex-row justify-between mb-4 gap-4">
-                    <h2 class="text-2xl font-semibold text-indigo-900">Producción en Curso</h2>
-                    <input type="search" id="search-input" placeholder="Buscar cliente o descripción..." class="border rounded-md px-3 py-2">
+            <!-- Listado y Filtros -->
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-5xl mx-auto">
+                <div class="flex flex-col gap-4 mb-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-gray-800">Control de Producción</h2>
+                        <input type="search" id="search-input" placeholder="Buscar..." class="border rounded-lg px-4 py-2 text-sm w-48 sm:w-64 outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar" id="filter-buttons">
+                        <button data-filter="Pendiente" onclick="window.setFilter('Pendiente')" class="filter-btn bg-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-sm active-filter">Pendientes (Activa)</button>
+                        <button data-filter="Terminado" onclick="window.setFilter('Terminado')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-sm">Terminados</button>
+                        <button data-filter="Entregado" onclick="window.setFilter('Entregado')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-sm">Entregados</button>
+                        <button data-filter="todos" onclick="window.setFilter('todos')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-sm">Ver Todo</button>
+                    </div>
                 </div>
                 <div id="lista-pedidos" class="space-y-4"></div>
             </div>
         </div>
 
-        <!-- Vista de Cuentas por Cobrar -->
-        <div id="cuentas-view" class="hidden">
+        <!-- Vista de Cobranza -->
+        <div id="cuentas-view" class="hidden no-print">
             <button class="back-to-menu mb-6 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700">&larr; Volver al Menú</button>
-            
             <div class="bg-white p-6 rounded-lg shadow-md mb-8 max-w-4xl mx-auto border-l-8 border-red-500">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Resumen de Morosidad</h2>
+                <h2 class="text-xl font-bold text-gray-800 mb-4 uppercase tracking-wider">Resumen de Cartera</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="p-4 bg-red-50 rounded-lg">
-                        <p class="text-sm text-red-600 font-bold uppercase tracking-wider">Total Pendiente (C$)</p>
+                        <p class="text-xs text-red-600 font-bold uppercase">Total en Mora (C$)</p>
                         <p id="total-mora-cs" class="text-2xl font-black text-red-700">C$0.00</p>
                     </div>
                     <div class="p-4 bg-orange-50 rounded-lg">
-                        <p class="text-sm text-orange-600 font-bold uppercase tracking-wider">Total Pendiente ($)</p>
+                        <p class="text-xs text-orange-600 font-bold uppercase">Total en Mora ($)</p>
                         <p id="total-mora-usd" class="text-2xl font-black text-orange-700">$0.00</p>
                     </div>
                 </div>
             </div>
+            <div id="lista-cuentas" class="space-y-4 max-w-4xl mx-auto"></div>
+        </div>
 
-            <div class="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-semibold">Clientes con Saldo Pendiente</h3>
+        <!-- Vista de Reportes -->
+        <div id="reportes-view" class="hidden no-print">
+            <button class="back-to-menu mb-6 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700">&larr; Volver al Menú</button>
+            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Cambiado para ver en pantalla primero -->
+                <div class="bg-white p-8 rounded-2xl shadow-md border-2 border-transparent hover:border-amber-500 transition-all cursor-pointer group" onclick="window.previewReport('cobranza')">
+                    <div class="text-amber-600 mb-4 group-hover:scale-110 transition-transform"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
+                    <h3 class="text-xl font-bold">Reporte de Cobranza</h3>
+                    <p class="text-sm text-gray-500 mt-2">Ver lista de deudores antes de descargar.</p>
                 </div>
-                <div id="lista-cuentas" class="space-y-4"></div>
+                <div class="bg-white p-8 rounded-2xl shadow-md border-2 border-transparent hover:border-blue-500 transition-all cursor-pointer group" onclick="window.previewReport('produccion')">
+                    <div class="text-blue-600 mb-4 group-hover:scale-110 transition-transform"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 012-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg></div>
+                    <h3 class="text-xl font-bold">Reporte de Producción</h3>
+                    <p class="text-sm text-gray-500 mt-2">Ver pedidos para fabricar hoy.</p>
+                </div>
             </div>
         </div>
+
+        <!-- Vista de Previsualización de Reporte -->
+        <div id="report-preview-view" class="hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 no-print">
+                <button onclick="showView('reportes-view')" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700">&larr; Volver</button>
+                <div class="flex gap-2">
+                    <button id="print-report-btn" onclick="window.print()" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Imprimir
+                    </button>
+                    <button id="download-report-pdf-btn" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Descargar PDF
+                    </button>
+                </div>
+            </div>
+
+            <div id="report-printable-area" class="bg-white p-8 rounded-xl shadow-lg max-w-5xl mx-auto border min-h-[500px]">
+                <div class="text-center mb-10">
+                    <h2 class="text-2xl font-black text-gray-900 uppercase tracking-widest">Arca de la Nueva Alianza</h2>
+                    <p id="report-title-display" class="text-indigo-600 font-bold mt-1 text-lg"></p>
+                    <p id="report-date-display" class="text-gray-500 text-sm mt-1"></p>
+                </div>
+                <div id="report-content-container" class="overflow-x-auto">
+                    <!-- El contenido se inyecta aquí -->
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Modals -->
-    <div id="details-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+    <div id="details-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop no-print">
         <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-2xl max-h-[85vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-                <h2 class="text-xl font-bold">Historial de: <span id="modal-cliente-nombre" class="text-indigo-600"></span></h2>
-                <button id="close-details-modal-btn" class="text-gray-400 hover:text-black text-2xl">&times;</button>
+                <h2 class="text-xl font-bold">Historial: <span id="modal-cliente-nombre" class="text-indigo-600"></span></h2>
+                <button onclick="window.closeDetailsModal()" class="text-gray-400 hover:text-black text-2xl">&times;</button>
             </div>
             <div id="modal-body" class="p-6 overflow-y-auto"></div>
         </div>
     </div>
 
-    <div id="pago-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+    <div id="pago-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop no-print">
         <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm">
             <div class="p-4 border-b flex justify-between items-center bg-emerald-50">
-                <h2 class="text-xl font-bold">Registrar Abono</h2>
-                <button id="close-pago-modal-btn" class="text-gray-400 hover:text-black text-2xl">&times;</button>
+                <h2 class="text-xl font-bold">Nuevo Abono</h2>
+                <button onclick="window.closePagoModal()" class="text-gray-400 hover:text-black text-2xl">&times;</button>
             </div>
             <form id="form-pago" class="p-6">
                 <input type="hidden" id="pago-pedido-id">
                 <div class="space-y-2 text-sm">
-                    <div class="flex justify-between"><span>Total Pedido:</span><span id="pago-modal-total"></span></div>
-                    <div class="flex justify-between"><span>Total Pagado:</span><span id="pago-modal-pagado" class="text-green-600"></span></div>
-                    <div class="flex justify-between font-bold text-base border-t pt-2"><span>Pendiente:</span><span id="pago-modal-saldo" class="text-red-600"></span></div>
+                    <div class="flex justify-between"><span>Total:</span><span id="pago-modal-total" class="font-bold"></span></div>
+                    <div class="flex justify-between font-bold text-lg border-t pt-2"><span>Saldo:</span><span id="pago-modal-saldo" class="text-red-600"></span></div>
                 </div>
                 <div class="mt-4">
-                    <label class="block text-sm font-medium">Monto del Abono</label>
-                    <div class="flex items-center mt-1"><span class="currency-symbol-pago mr-1">C$</span><input type="number" id="pago-monto-input" step="0.01" required class="w-full border rounded px-3 py-2"></div>
+                    <label class="block text-sm font-bold mb-1">Monto a recibir</label>
+                    <div class="flex items-center"><span class="currency-symbol-pago mr-1">C$</span><input type="number" id="pago-monto-input" step="0.01" required class="w-full border-2 border-emerald-200 rounded-lg px-3 py-2 text-lg font-bold outline-none"></div>
                 </div>
-                <button type="submit" class="w-full mt-6 bg-emerald-600 text-white font-bold py-2 rounded-lg">Guardar Pago</button>
+                <button type="submit" class="w-full mt-6 bg-emerald-600 text-white font-black py-3 rounded-xl shadow-md">CONFIRMAR PAGO</button>
             </form>
         </div>
     </div>
 
-    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop no-print">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-2xl">
             <h3 id="confirm-modal-title" class="text-xl font-bold mb-2"></h3>
-            <p id="confirm-modal-text" class="text-gray-600 mb-6"></p>
+            <p id="confirm-modal-text" class="text-sm text-gray-500 mb-6"></p>
             <div class="flex justify-center gap-3">
-                <button id="confirm-modal-cancel-btn" class="bg-gray-200 px-6 py-2 rounded-lg">No</button>
-                <button id="confirm-modal-confirm-btn" class="bg-red-600 text-white px-6 py-2 rounded-lg">Confirmar</button>
+                <button id="confirm-modal-cancel-btn" class="bg-gray-200 px-6 py-2 rounded-lg font-bold">Cancelar</button>
+                <button id="confirm-modal-confirm-btn" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold">Confirmar</button>
             </div>
         </div>
     </div>
@@ -236,7 +302,6 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, serverTimestamp, arrayUnion, increment, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyB_WVIVpY7JrGM-O73RelpiP4JsB3Y1Cfs",
             authDomain: "mi-negocio-de-sublimacion.firebaseapp.com",
@@ -253,11 +318,11 @@
         const pedidosRef = collection(db, 'pedidos');
         const clientesRef = collection(db, 'clientes');
         
-        let currentUser = null, allPedidos = [], allClientes = [], nextClientId = 1, returnToPedidosView = false;
+        let allPedidos = [], allClientes = [], nextClientId = 1, returnToPedidosView = false, currentFilter = 'Pendiente';
+        let pendingSelection = null; 
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                currentUser = user;
                 listenToClientes();
                 listenToPedidos();
             } else {
@@ -265,41 +330,54 @@
             }
         });
 
-        // NAVEGACIÓN
-        function showView(view) {
-            document.getElementById('main-menu-view').classList.add('hidden');
-            document.getElementById('clientes-view').classList.add('hidden');
-            document.getElementById('pedidos-view').classList.add('hidden');
-            document.getElementById('cuentas-view').classList.add('hidden');
-            view.classList.remove('hidden');
+        // NAVEGACIÓN MEJORADA
+        function showView(viewId) {
+            const views = ['main-menu-view', 'clientes-view', 'pedidos-view', 'cuentas-view', 'reportes-view', 'report-preview-view'];
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+            window.scrollTo(0,0);
         }
+        window.showView = showView;
 
-        document.getElementById('goto-clientes-btn').onclick = () => showView(document.getElementById('clientes-view'));
-        document.getElementById('goto-pedidos-btn').onclick = () => showView(document.getElementById('pedidos-view'));
+        document.getElementById('goto-clientes-btn').onclick = () => showView('clientes-view');
+        document.getElementById('goto-pedidos-btn').onclick = () => {
+            showView('pedidos-view');
+            window.setFilter('Pendiente'); 
+        };
+        document.getElementById('goto-reportes-btn').onclick = () => showView('reportes-view');
         document.getElementById('goto-cuentas-btn').onclick = () => {
-            showView(document.getElementById('cuentas-view'));
+            showView('cuentas-view');
             renderCuentasPorCobrar();
         };
-        
         document.querySelectorAll('.back-to-menu').forEach(b => b.onclick = () => {
             returnToPedidosView = false;
-            showView(document.getElementById('main-menu-view'));
+            showView('main-menu-view');
         });
 
-        window.closeDetailsModal = () => {
-            document.getElementById('details-modal').classList.add('hidden');
-            document.getElementById('details-modal').classList.remove('flex');
-        };
+        window.closeDetailsModal = () => document.getElementById('details-modal').classList.add('hidden');
+        window.closePagoModal = () => document.getElementById('pago-modal').classList.add('hidden');
 
-        window.closePagoModal = () => {
-            document.getElementById('pago-modal').classList.add('hidden');
-            document.getElementById('pago-modal').classList.remove('flex');
-        };
-
-        const showToast = () => {
+        const showToast = (msg = "¡Guardado!") => {
             const toast = document.getElementById('toast');
+            toast.textContent = msg;
             toast.style.display = 'block';
             setTimeout(() => toast.style.display = 'none', 3000);
+        };
+
+        // FILTROS
+        window.setFilter = (val) => {
+            currentFilter = val;
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                const bFilter = b.getAttribute('data-filter');
+                if (bFilter === val) {
+                    b.classList.remove('bg-gray-200', 'text-gray-700');
+                    b.classList.add('bg-indigo-600', 'text-white', 'active-filter');
+                } else {
+                    b.classList.remove('bg-indigo-600', 'text-white', 'active-filter');
+                    b.classList.add('bg-gray-200', 'text-gray-700');
+                }
+            });
+            renderPedidos();
         };
 
         // GESTIÓN DE CLIENTES
@@ -311,19 +389,24 @@
                 document.getElementById('nuevo-cliente-id').value = nextClientId.toString().padStart(4, '0');
                 renderClientes();
                 updateSelectClientes();
+
+                if(pendingSelection) {
+                    document.getElementById('cliente-select').value = pendingSelection;
+                    pendingSelection = null;
+                }
             });
         }
 
         function renderClientes() {
             const list = document.getElementById('lista-clientes');
-            list.innerHTML = allClientes.length ? '' : '<p class="text-center text-gray-400">No hay clientes.</p>';
-            allClientes.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(c => {
+            list.innerHTML = '';
+            allClientes.sort((a,b) => (a.nombre || "").localeCompare(b.nombre || "")).forEach(c => {
                 const div = document.createElement('div');
-                div.className = 'flex justify-between items-center p-3 border rounded-lg bg-gray-50';
-                div.innerHTML = `<div><p class="font-bold">${c.nombre}</p><p class="text-xs text-gray-500">ID: ${c.clienteId?.toString().padStart(4, '0')} | Tel: ${c.telefono}</p></div>
-                <div class="flex gap-2">
-                    <button onclick="window.showClientHistory('${c.nombre.replace(/'/g, "\\'")}')" class="text-indigo-600 text-sm font-bold">Historial</button>
-                    <button onclick="window.editClient('${c.id}')" class="text-yellow-600 text-sm font-bold">Editar</button>
+                div.className = 'flex justify-between items-center p-4 border rounded-xl bg-gray-50';
+                div.innerHTML = `<div><p class="font-bold text-gray-800">${c.nombre}</p><p class="text-xs text-gray-500">ID: ${c.clienteId?.toString().padStart(4, '0')} | WA: ${c.telefono}</p></div>
+                <div class="flex gap-3">
+                    <button onclick="window.showClientHistory('${c.nombre.replace(/'/g, "\\'")}')" class="text-indigo-600 text-xs font-black uppercase tracking-wider">Historial</button>
+                    <button onclick="window.editClient('${c.id}')" class="text-yellow-600 text-xs font-black uppercase tracking-wider">Editar</button>
                 </div>`;
                 list.appendChild(div);
             });
@@ -333,39 +416,33 @@
             const sel = document.getElementById('cliente-select');
             const current = sel.value;
             sel.innerHTML = '<option value="" disabled selected>Selecciona cliente</option>';
-            allClientes.forEach(c => {
+            allClientes.sort((a,b) => (a.nombre || "").localeCompare(b.nombre || "")).forEach(c => {
                 const o = document.createElement('option');
                 o.value = c.nombre; o.textContent = `${c.clienteId.toString().padStart(4, '0')} - ${c.nombre}`;
                 sel.appendChild(o);
             });
-            sel.value = current;
+            if(current) sel.value = current;
         }
 
         document.getElementById('form-cliente').onsubmit = async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submit-cliente-btn');
             const id = document.getElementById('cliente-id-edit').value;
             const nombre = document.getElementById('nuevo-cliente-nombre').value.trim();
             const telefono = document.getElementById('nuevo-cliente-telefono').value.trim();
-            
-            btn.disabled = true; btn.textContent = 'Guardando...';
             try {
                 if (id) {
                     await updateDoc(doc(db, 'clientes', id), { nombre, telefono });
                 } else {
                     await addDoc(clientesRef, { nombre, telefono, clienteId: nextClientId });
                 }
-                showToast();
-                resetClienteForm();
+                showToast("Guardado con éxito");
                 if (returnToPedidosView) {
+                    pendingSelection = nombre; 
+                    showView('pedidos-view');
                     returnToPedidosView = false;
-                    setTimeout(() => {
-                        showView(document.getElementById('pedidos-view'));
-                        document.getElementById('cliente-select').value = nombre;
-                    }, 500);
                 }
-            } catch (err) { alert("Error al guardar: " + err.message); }
-            btn.disabled = false; btn.textContent = 'Guardar Cliente';
+                resetClienteForm();
+            } catch (err) { alert(err.message); }
         };
 
         function resetClienteForm() {
@@ -384,36 +461,22 @@
             document.getElementById('nuevo-cliente-id').value = c.clienteId?.toString().padStart(4,'0');
             document.getElementById('form-cliente-title').textContent = "Editar Cliente";
             document.getElementById('cancel-cliente-edit-btn').classList.remove('hidden');
+            window.scrollTo(0,0);
         };
 
         window.showClientHistory = (nombre) => {
-            const history = allPedidos.filter(p => p.cliente.trim() === nombre.trim());
+            const history = allPedidos.filter(p => p.cliente === nombre);
             const modal = document.getElementById('details-modal');
             const body = document.getElementById('modal-body');
-            const nameSpan = document.getElementById('modal-cliente-nombre');
-            
-            if (nameSpan) nameSpan.textContent = nombre;
-            
-            body.innerHTML = history.length ? '' : '<p class="text-gray-500 italic">No hay pedidos registrados.</p>';
-            
-            history.sort((a, b) => new Date(b.fecha_entrega) - new Date(a.fecha_entrega)).forEach(p => {
-                const saldo = p.monto_total - p.total_pagado;
+            document.getElementById('modal-cliente-nombre').textContent = nombre;
+            body.innerHTML = history.length ? '' : '<p class="text-gray-500 italic text-center py-4">No hay historial.</p>';
+            history.sort((a,b) => new Date(b.fecha_entrega) - new Date(a.fecha_entrega)).forEach(p => {
+                const saldo = p.monto_total - (p.total_pagado || 0);
+                const estado = p.estado || 'Pendiente';
                 const d = document.createElement('div');
-                d.className = `mb-4 p-4 border rounded-lg bg-gray-50 shadow-sm ${p.estado === 'Anulado' ? 'opacity-50 grayscale' : ''}`;
-                d.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="font-bold text-indigo-700">${p.descripcion} ${p.estado === 'Anulado' ? '(ANULADO)' : ''}</p>
-                            <p class="text-xs text-gray-500 mt-1">Entrega: ${p.fecha_entrega}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold">${p.moneda || 'C$'}${p.monto_total.toFixed(2)}</p>
-                            <p class="text-sm font-semibold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}">
-                                ${p.estado === 'Anulado' ? '---' : (saldo > 0 ? 'Debe: ' + (p.moneda || 'C$') + saldo.toFixed(2) : 'PAGADO')}
-                            </p>
-                        </div>
-                    </div>
-                `;
+                d.className = `mb-4 p-4 border rounded-lg bg-gray-50 ${estado === 'Anulado' ? 'opacity-40 grayscale' : ''}`;
+                d.innerHTML = `<div class="flex justify-between items-start"><div><p class="font-bold text-indigo-700">${p.descripcion}</p><p class="text-[10px] text-gray-500 mt-1 font-bold">FECHA: ${p.fecha_entrega}</p></div>
+                <div class="text-right"><p class="font-bold">${p.moneda || 'C$'}${p.monto_total.toFixed(2)}</p><p class="text-sm font-semibold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}">${estado === 'Anulado' ? '---' : (saldo > 0 ? 'SALDO: ' + saldo.toFixed(2) : 'PAGADO')}</p></div></div>`;
                 body.appendChild(d);
             });
             modal.classList.remove('hidden'); modal.classList.add('flex');
@@ -424,132 +487,214 @@
             onSnapshot(pedidosRef, (snap) => {
                 allPedidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderPedidos();
-                // Si la vista actual es cuentas, actualizarla también
                 if(!document.getElementById('cuentas-view').classList.contains('hidden')) renderCuentasPorCobrar();
             });
         }
 
         function renderPedidos() {
             const list = document.getElementById('lista-pedidos');
-            const search = document.getElementById('search-input').value.toLowerCase();
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
             list.innerHTML = '';
             
-            const filtrados = allPedidos.filter(p => 
-                (p.cliente.toLowerCase().includes(search) || 
-                p.descripcion.toLowerCase().includes(search)) && 
-                p.estado !== 'Anulado'
-            );
+            const filtrados = allPedidos.filter(p => {
+                const estadoReal = (p.estado || 'Pendiente').trim().toLowerCase();
+                const filtroActual = currentFilter.trim().toLowerCase();
+                const cliReal = (p.cliente || "").toLowerCase();
+                const descReal = (p.descripcion || "").toLowerCase();
+                const searchMatch = cliReal.includes(search) || descReal.includes(search);
+                
+                let filterMatch = false;
+                if (filtroActual === 'todos') {
+                    filterMatch = (estadoReal !== 'anulado'); 
+                } else {
+                    const esEnProceso = (filtroActual === 'pendiente') && (estadoReal === 'pendiente' || estadoReal === 'en diseño');
+                    filterMatch = esEnProceso || (estadoReal === filtroActual);
+                }
+                return searchMatch && filterMatch;
+            });
 
             filtrados.sort((a,b) => new Date(a.fecha_entrega) - new Date(b.fecha_entrega)).forEach(p => {
                 const div = document.createElement('div');
-                div.className = 'bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow';
-                div.innerHTML = `<div class="flex justify-between"><div><p class="font-bold text-indigo-700">${p.cliente}</p><p class="text-sm">${p.descripcion}</p></div>
-                <div class="text-right"><p class="font-bold">${p.moneda}${p.monto_total.toFixed(2)}</p><p class="text-xs ${p.monto_total - p.total_pagado > 0 ? 'text-red-600' : 'text-green-600'}">Saldo: ${p.moneda}${(p.monto_total - p.total_pagado).toFixed(2)}</p></div></div>
-                <div class="mt-3 flex gap-2 justify-end flex-wrap">
-                    <button onclick="window.sendWhatsApp('${p.id}')" class="text-xs bg-green-100 text-green-800 p-1 px-3 rounded font-medium flex items-center gap-1">Notificar</button>
-                    <button onclick="window.sendWhatsApp('${p.id}', true)" class="text-xs bg-blue-100 text-blue-800 p-1 px-3 rounded font-medium">Auto-Aviso</button>
-                    <button onclick="window.generatePdf('${p.id}')" class="text-xs bg-gray-100 p-1 px-3 rounded font-medium">Ticket</button>
-                    ${p.monto_total - p.total_pagado > 0 ? `<button onclick="window.openAbono('${p.id}')" class="text-xs bg-emerald-100 text-emerald-800 p-1 px-3 rounded font-medium">Abono</button>` : ''}
-                    <button onclick="window.editPedido('${p.id}')" class="text-xs bg-yellow-100 text-yellow-800 p-1 px-3 rounded font-medium">Editar</button>
-                    <button onclick="window.anularPedido('${p.id}')" class="text-xs bg-red-100 text-red-800 p-1 px-3 rounded font-medium">Anular</button>
-                </div>`;
+                const saldo = p.monto_total - (p.total_pagado || 0);
+                const estadoActual = (p.estado || 'Pendiente').trim();
+                const statusClass = `status-${estadoActual.toLowerCase().replace(/\s+/g, '').replace('ñ', 'n')}`;
+                
+                div.className = 'bg-white p-5 rounded-xl shadow-md border-l-4 border-indigo-500 flex flex-col gap-3 hover:shadow-lg transition-shadow';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="status-badge ${statusClass}">${estadoActual}</span>
+                            <p class="font-bold text-lg text-gray-800 mt-1">${p.cliente}</p>
+                            <p class="text-sm text-gray-600 italic">"${p.descripcion}"</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-xl">${p.moneda}${p.monto_total.toFixed(2)}</p>
+                            <p class="text-[11px] font-bold ${saldo > 0 ? 'text-red-500' : 'text-green-600'} uppercase tracking-tighter">SALDO: ${p.moneda}${saldo.toFixed(2)}</p>
+                            <p class="text-[10px] text-gray-400 mt-1 uppercase font-bold">Entrega: <span class="text-gray-700">${p.fecha_entrega}</span></p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 pt-2 border-t justify-between items-center">
+                        <select onchange="window.updateStatus('${p.id}', this.value)" class="text-[11px] border rounded px-2 py-1 bg-gray-50 font-bold outline-none cursor-pointer">
+                            <option value="Pendiente" ${estadoActual === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                            <option value="Terminado" ${estadoActual === 'Terminado' ? 'selected' : ''}>Terminado</option>
+                            <option value="Entregado" ${estadoActual === 'Entregado' ? 'selected' : ''}>Entregado</option>
+                        </select>
+                        <div class="flex gap-1.5">
+                            <button onclick="window.sendWhatsApp('${p.id}')" class="bg-green-100 text-green-700 p-2 rounded-lg" title="WA"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></button>
+                            <button onclick="window.generatePdf('${p.id}')" class="bg-gray-100 text-gray-700 p-2 rounded-lg hover:bg-gray-200" title="Ticket"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg></button>
+                            ${saldo > 0 ? `<button onclick="window.openAbono('${p.id}')" class="bg-emerald-100 text-emerald-700 p-2 rounded-lg hover:bg-emerald-200" title="Abonar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 8V7m0 1v1m0 5v1m0-1V12m3.366-3.366L14 10m-3.366 3.366L10 14m6-6l1 1m-7 7l-1-1m10-10l-1 1M5 19l1-1M19 5l-1 1M5 5l1 1M19 19l-1-1"/></svg></button>` : ''}
+                            <button onclick="window.editPedido('${p.id}')" class="bg-amber-100 text-amber-700 p-2 rounded-lg hover:bg-amber-200" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="window.anularPedido('${p.id}')" class="bg-red-100 text-red-700 p-2 rounded-lg hover:bg-red-200" title="Anular"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
+                        </div>
+                    </div>
+                `;
                 list.appendChild(div);
             });
         }
 
-        // CUENTAS POR COBRAR (NUEVO)
+        window.updateStatus = async (id, newStatus) => {
+            try {
+                await updateDoc(doc(db, 'pedidos', id), { estado: newStatus.trim() });
+                showToast("Estado actualizado");
+            } catch(e) { alert("Error"); }
+        };
+
+        // CUENTAS POR COBRAR
         function renderCuentasPorCobrar() {
             const list = document.getElementById('lista-cuentas');
             const totalCsDisplay = document.getElementById('total-mora-cs');
             const totalUsdDisplay = document.getElementById('total-mora-usd');
-            
             list.innerHTML = '';
-            
-            // Filtrar solo pedidos con saldo pendiente y que NO estén anulados
-            const pedidosPendientes = allPedidos.filter(p => (p.monto_total > p.total_pagado) && p.estado !== 'Anulado');
-            
-            if (pedidosPendientes.length === 0) {
-                list.innerHTML = '<p class="text-center text-gray-500 py-10">¡Excelente! No tienes cuentas por cobrar pendientes.</p>';
-                totalCsDisplay.textContent = 'C$0.00';
-                totalUsdDisplay.textContent = '$0.00';
+            const pendientes = allPedidos.filter(p => (p.monto_total > (p.total_pagado || 0)) && (p.estado || 'Pendiente').toLowerCase().trim() !== 'anulado');
+            if (pendientes.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500 py-10">Sin deudas pendientes.</p>';
+                totalCsDisplay.textContent = 'C$0.00'; totalUsdDisplay.textContent = '$0.00';
                 return;
             }
-
-            // Agrupar por cliente
             const deudasPorCliente = {};
-            let globalCs = 0;
-            let globalUsd = 0;
-
-            pedidosPendientes.forEach(p => {
-                if (!deudasPorCliente[p.cliente]) {
-                    deudasPorCliente[p.cliente] = {
-                        cs: 0,
-                        usd: 0,
-                        pedidos: []
-                    };
-                }
-                const saldo = p.monto_total - p.total_pagado;
-                if (p.moneda === 'C$') {
-                    deudasPorCliente[p.cliente].cs += saldo;
-                    globalCs += saldo;
-                } else {
-                    deudasPorCliente[p.cliente].usd += saldo;
-                    globalUsd += saldo;
-                }
+            let globalCs = 0, globalUsd = 0;
+            pendientes.forEach(p => {
+                if (!deudasPorCliente[p.cliente]) deudasPorCliente[p.cliente] = { cs: 0, usd: 0, pedidos: [] };
+                const saldo = p.monto_total - (p.total_pagado || 0);
+                if (p.moneda === 'C$') { deudasPorCliente[p.cliente].cs += saldo; globalCs += saldo; }
+                else { deudasPorCliente[p.cliente].usd += saldo; globalUsd += saldo; }
                 deudasPorCliente[p.cliente].pedidos.push(p);
             });
-
-            totalCsDisplay.textContent = `C$${globalCs.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-            totalUsdDisplay.textContent = `$${globalUsd.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-
-            // Renderizar tarjetas por cliente
-            Object.keys(deudasPorCliente).sort().forEach(clienteNombre => {
-                const data = deudasPorCliente[clienteNombre];
+            totalCsDisplay.textContent = `C$${globalCs.toFixed(2)}`;
+            totalUsdDisplay.textContent = `$${globalUsd.toFixed(2)}`;
+            Object.keys(deudasPorCliente).sort().forEach(cliente => {
+                const data = deudasPorCliente[cliente];
                 const card = document.createElement('div');
                 card.className = 'border rounded-xl bg-white overflow-hidden shadow-sm';
-                
-                let resumenMora = '';
-                if(data.cs > 0) resumenMora += `<span class="text-red-700 font-bold mr-3">C$${data.cs.toFixed(2)}</span>`;
-                if(data.usd > 0) resumenMora += `<span class="text-orange-700 font-bold">$${data.usd.toFixed(2)}</span>`;
-
-                card.innerHTML = `
-                    <div class="bg-gray-50 p-4 flex justify-between items-center border-b">
-                        <div>
-                            <h4 class="font-bold text-lg text-gray-800">${clienteNombre}</h4>
-                            <p class="text-sm text-gray-500">${data.pedidos.length} factura(s) pendiente(s)</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs font-bold text-gray-400 uppercase">Total Deuda</p>
-                            ${resumenMora}
-                        </div>
-                    </div>
-                    <div class="p-2 space-y-2">
-                        ${data.pedidos.map(p => {
-                            const saldo = p.monto_total - p.total_pagado;
-                            return `
-                            <div class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg border border-transparent hover:border-gray-200 transition-all">
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium text-gray-700">${p.descripcion}</p>
-                                    <p class="text-xs text-gray-400">Entrega: ${p.fecha_entrega}</p>
-                                </div>
-                                <div class="text-right mr-4">
-                                    <p class="text-sm font-black text-red-600">${p.moneda}${saldo.toFixed(2)}</p>
-                                </div>
-                                <div class="flex gap-1">
-                                    <button onclick="window.sendWhatsApp('${p.id}')" class="p-1.5 bg-green-100 text-green-700 rounded-md" title="Cobrar por WhatsApp">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                                    </button>
-                                    <button onclick="window.openAbono('${p.id}')" class="p-1.5 bg-emerald-100 text-emerald-700 rounded-md" title="Registrar Pago">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 8V7m0 1v1m0 5v1m0-1V12m3.366-3.366L14 10m-3.366 3.366L10 14m6-6l1 1m-7 7l-1-1m10-10l-1 1M5 19l1-1M19 5l-1 1M5 5l1 1M19 19l-1-1"/></svg>
-                                    </button>
-                                </div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                `;
+                card.innerHTML = `<div class="bg-gray-50 p-4 flex justify-between items-center border-b"><div><h4 class="font-bold text-gray-800">${cliente}</h4><p class="text-xs text-gray-400">${data.pedidos.length} pendiente(s)</p></div>
+                <div class="text-right">${data.cs > 0 ? `<p class="text-red-600 font-bold">C$${data.cs.toFixed(2)}</p>` : ''}${data.usd > 0 ? `<p class="text-orange-600 font-bold">$${data.usd.toFixed(2)}</p>` : ''}</div></div>
+                <div class="p-2 space-y-1">${data.pedidos.map(p => `<div class="flex justify-between items-center p-2 text-[11px] border-b border-gray-50 last:border-0"><span>${p.descripcion}</span><div class="flex items-center gap-2"><span class="font-bold text-red-500">${p.moneda}${(p.monto_total - (p.total_pagado || 0)).toFixed(2)}</span><button onclick="window.openAbono('${p.id}')" class="bg-emerald-500 text-white px-2 py-0.5 rounded text-[9px] font-bold uppercase">Abonar</button></div></div>`).join('')}</div>`;
                 list.appendChild(card);
             });
         }
+
+        // --- NUEVA LÓGICA DE PREVISUALIZACIÓN DE REPORTES ---
+        window.previewReport = (type) => {
+            const container = document.getElementById('report-content-container');
+            const titleDisplay = document.getElementById('report-title-display');
+            const dateDisplay = document.getElementById('report-date-display');
+            const downloadBtn = document.getElementById('download-report-pdf-btn');
+            
+            dateDisplay.textContent = new Date().toLocaleDateString('es-NI', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            
+            if (type === 'cobranza') {
+                titleDisplay.textContent = "Reporte de Cartera y Cobranza";
+                const data = allPedidos.filter(p => (p.monto_total > (p.total_pagado || 0)) && (p.estado || 'Pendiente').toLowerCase() !== 'anulado');
+                
+                let totalCs = 0, totalUsd = 0;
+                
+                let html = `
+                    <table class="w-full text-left border-collapse mt-4">
+                        <thead>
+                            <tr class="bg-gray-100 border-b-2 border-gray-300">
+                                <th class="p-3 text-sm font-bold uppercase">Cliente</th>
+                                <th class="p-3 text-sm font-bold uppercase">Pedido</th>
+                                <th class="p-3 text-sm font-bold uppercase">Fecha Entrega</th>
+                                <th class="p-3 text-sm font-bold uppercase text-right">Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                if (data.length === 0) {
+                    html += `<tr><td colspan="4" class="p-10 text-center text-gray-400 italic">No hay saldos pendientes en cartera.</td></tr>`;
+                } else {
+                    data.sort((a,b) => a.cliente.localeCompare(b.cliente)).forEach(p => {
+                        const saldo = p.monto_total - (p.total_pagado || 0);
+                        if (p.moneda === 'C$') totalCs += saldo; else totalUsd += saldo;
+                        
+                        html += `
+                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                <td class="p-3 text-sm font-bold text-gray-800">${p.cliente}</td>
+                                <td class="p-3 text-sm text-gray-600">${p.descripcion}</td>
+                                <td class="p-3 text-sm text-gray-500">${p.fecha_entrega}</td>
+                                <td class="p-3 text-sm font-black text-right ${p.moneda === 'C$' ? 'text-red-700' : 'text-orange-700'}">
+                                    ${p.moneda}${saldo.toFixed(2)}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                        <tr class="bg-indigo-50 border-t-2 border-indigo-200">
+                            <td colspan="3" class="p-3 text-sm font-black uppercase text-indigo-900 text-right">Totales en Cartera:</td>
+                            <td class="p-3 text-right">
+                                <p class="text-sm font-black text-red-700">C$${totalCs.toFixed(2)}</p>
+                                <p class="text-sm font-black text-orange-700">$${totalUsd.toFixed(2)}</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+                downloadBtn.onclick = window.generateCobranzaReport;
+                
+            } else if (type === 'produccion') {
+                titleDisplay.textContent = "Reporte de Producción Diaria";
+                const data = allPedidos.filter(p => ['pendiente', 'terminado'].includes((p.estado || 'pendiente').toLowerCase().trim()));
+                
+                let html = `
+                    <table class="w-full text-left border-collapse mt-4">
+                        <thead>
+                            <tr class="bg-gray-100 border-b-2 border-gray-300">
+                                <th class="p-3 text-sm font-bold uppercase">Estado</th>
+                                <th class="p-3 text-sm font-bold uppercase">Cliente</th>
+                                <th class="p-3 text-sm font-bold uppercase">Entrega</th>
+                                <th class="p-3 text-sm font-bold uppercase">Descripción del Pedido</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                if (data.length === 0) {
+                    html += `<tr><td colspan="4" class="p-10 text-center text-gray-400 italic">No hay pedidos pendientes en producción.</td></tr>`;
+                } else {
+                    data.sort((a,b) => new Date(a.fecha_entrega) - new Date(b.fecha_entrega)).forEach(p => {
+                        const estado = p.estado || 'Pendiente';
+                        html += `
+                            <tr class="border-b border-gray-100">
+                                <td class="p-3"><span class="status-badge status-${estado.toLowerCase()}">${estado}</span></td>
+                                <td class="p-3 text-sm font-bold">${p.cliente}</td>
+                                <td class="p-3 text-sm font-black text-red-600">${p.fecha_entrega}</td>
+                                <td class="p-3 text-sm text-gray-700">${p.descripcion}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+                downloadBtn.onclick = window.generateProduccionReport;
+            }
+            
+            showView('report-preview-view');
+        };
 
         // WHATSAPP
         window.sendWhatsApp = (id, toBusiness = false) => {
@@ -557,42 +702,50 @@
             const cli = allClientes.find(c => c.nombre === p.cliente);
             const miNumero = "50586486539";
             let phone = toBusiness ? miNumero : (cli?.telefono ? cli.telefono.replace(/\D/g, '') : "");
-            if (!toBusiness && !phone) { alert("El cliente no tiene teléfono."); return; }
-            const saldo = p.monto_total - p.total_pagado;
-            let mensaje = "";
-            if (toBusiness) {
-                mensaje = `🔔 *RECORDATORIO DE NEGOCIO*\nCliente: *${p.cliente}*\nPedido: ${p.descripcion}\nTotal: ${p.moneda}${p.monto_total.toFixed(2)}\nSaldo: ${p.moneda}${saldo.toFixed(2)}`;
-            } else {
-                mensaje = `Hola *${p.cliente}*, te saludamos de *ARCA DE LA NUEVA ALIANZA*.\n\nQueremos informarte sobre tu pedido de: *${p.descripcion}*.\nTotal: ${p.moneda}${p.monto_total.toFixed(2)}\nSaldo pendiente: *${p.moneda}${saldo.toFixed(2)}*\nFecha de entrega: ${p.fecha_entrega}\n\n¡Gracias por tu preferencia!`;
-            }
+            if (!toBusiness && !phone) { alert("Cliente sin número."); return; }
+            const saldo = p.monto_total - (p.total_pagado || 0);
+            let mensaje = `Hola *${p.cliente}*, de *ARCA DE LA NUEVA ALIANZA*.\n\nPedido: *${p.descripcion}*.\nSaldo pendiente: *${p.moneda}${saldo.toFixed(2)}*\nEntrega: ${p.fecha_entrega}`;
             window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`, '_blank');
         };
 
-        // GESTIÓN DE ORDENES (EDITAR/ANULAR)
-        window.anularPedido = (id) => {
-            const cm = document.getElementById('confirm-modal');
-            cm.querySelector('#confirm-modal-title').textContent = "¿Anular Pedido?";
-            cm.querySelector('#confirm-modal-text').textContent = "El pedido dejará de aparecer en producción y cuentas por cobrar, pero quedará en el historial del cliente.";
-            cm.classList.remove('hidden'); cm.classList.add('flex');
-            
-            const confirmBtn = document.getElementById('confirm-modal-confirm-btn');
-            const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
-            
-            const handleConfirm = async () => {
-                try {
-                    await updateDoc(doc(db, 'pedidos', id), { estado: 'Anulado' });
-                    showToast();
-                    closeConfirm();
-                } catch(e) { alert(e.message); }
-            };
-            
-            const closeConfirm = () => {
-                cm.classList.add('hidden'); cm.classList.remove('flex');
-                confirmBtn.removeEventListener('click', handleConfirm);
-            };
-            
-            confirmBtn.onclick = handleConfirm;
-            cancelBtn.onclick = closeConfirm;
+        // REPORTES (PDF)
+        window.generateCobranzaReport = async () => {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            pdf.setFontSize(18); pdf.text("ARCA DE LA NUEVA ALIANZA", 20, 20);
+            pdf.setFontSize(14); pdf.text("REPORTE DE COBRANZA - " + new Date().toLocaleDateString(), 20, 30);
+            let y = 50;
+            let totalCs = 0, totalUsd = 0;
+            allPedidos.filter(p => (p.monto_total > (p.total_pagado || 0)) && (p.estado || 'Pendiente').toLowerCase() !== 'anulado').forEach(p => {
+                const saldo = p.monto_total - (p.total_pagado || 0);
+                if(p.moneda === 'C$') totalCs += saldo; else totalUsd += saldo;
+                pdf.setFontSize(10);
+                pdf.text(`${p.cliente.padEnd(25)} | ${p.moneda}${saldo.toFixed(2)} | Entrega: ${p.fecha_entrega}`, 20, y);
+                y += 7;
+                if(y > 270) { pdf.addPage(); y = 20; }
+            });
+            y += 5;
+            pdf.setFont(undefined, 'bold');
+            pdf.text(`TOTAL GENERAL C$: ${totalCs.toFixed(2)}`, 20, y); y+=7;
+            pdf.text(`TOTAL GENERAL $: ${totalUsd.toFixed(2)}`, 20, y);
+            pdf.save("Reporte_Cobranza.pdf");
+        };
+
+        window.generateProduccionReport = async () => {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            pdf.setFontSize(18); pdf.text("ARCA DE LA NUEVA ALIANZA", 20, 20);
+            pdf.setFontSize(14); pdf.text("REPORTE DE PRODUCCIÓN - " + new Date().toLocaleDateString(), 20, 30);
+            let y = 45;
+            allPedidos.filter(p => ['pendiente', 'terminado'].includes((p.estado || 'pendiente').toLowerCase())).sort((a,b) => new Date(a.fecha_entrega) - new Date(b.fecha_entrega)).forEach(p => {
+                pdf.setFontSize(10); pdf.setFont(undefined, 'bold');
+                pdf.text(`[${p.fecha_entrega}] - ${p.cliente}`, 20, y);
+                y += 5; pdf.setFont(undefined, 'normal'); pdf.setFontSize(9);
+                pdf.text(`Estado: ${p.estado || 'Pendiente'} | Detalle: ${p.descripcion}`, 22, y);
+                y += 10;
+                if(y > 280) { pdf.addPage(); y = 20; }
+            });
+            pdf.save("Reporte_Produccion.pdf");
         };
 
         // FORMULARIO PEDIDOS
@@ -613,31 +766,17 @@
             const container = document.getElementById('items-container');
             const row = document.createElement('div');
             row.className = 'flex gap-2 item-row';
-            row.innerHTML = `<input type="number" class="w-16 border rounded p-1 item-cant" value="${cant}" min="1"><input type="text" class="flex-grow border rounded p-1 item-desc" value="${desc}" placeholder="Producto"><input type="number" class="w-24 border rounded p-1 item-prec" value="${prec}" step="0.01" placeholder="Precio"><button type="button" class="text-red-500 font-bold px-1" onclick="this.parentElement.remove(); window.calcTotal()">×</button>`;
+            row.innerHTML = `<input type="number" class="w-16 border rounded p-1 item-cant text-center text-sm" value="${cant}"><input type="text" class="flex-grow border rounded p-1 item-desc text-sm" value="${desc}" placeholder="Producto"><input type="number" class="w-24 border rounded p-1 item-prec text-sm" value="${prec}" step="0.01"><button type="button" class="text-red-500 font-black px-2" onclick="this.parentElement.remove(); window.calcTotal()">×</button>`;
             container.appendChild(row);
             row.querySelectorAll('input').forEach(i => i.oninput = window.calcTotal);
         };
-        document.getElementById('add-item-btn').onclick = () => addItem();
 
-        window.editPedido = (id) => {
-            const p = allPedidos.find(x => x.id === id);
-            if(!p) return;
-            showView(document.getElementById('pedidos-view'));
-            document.getElementById('pedido-id-edit').value = p.id;
-            document.getElementById('cliente-select').value = p.cliente;
-            document.getElementById('moneda-select').value = p.moneda || 'C$';
-            document.querySelectorAll('.currency-symbol').forEach(s => s.textContent = p.moneda || 'C$');
-            document.getElementById('descripcion').value = p.descripcion;
-            document.getElementById('fecha_entrega').value = p.fecha_entrega;
-            document.getElementById('descuento-input').value = p.descuento || 0;
-            document.getElementById('items-container').innerHTML = '';
-            p.items.forEach(i => addItem(i.cantidad, i.descripcion, i.precio_unitario));
-            window.calcTotal();
-            document.getElementById('abono_inicial').disabled = true;
-            document.getElementById('form-pedido-title').textContent = "Editar Pedido";
-            document.getElementById('cancel-edit-btn').classList.remove('hidden');
-            document.getElementById('form-container-pedido').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('add-item-btn').onclick = () => addItem();
+        document.getElementById('quick-create-cliente-btn').onclick = () => {
+            returnToPedidosView = true;
+            showView('clientes-view');
         };
+        document.getElementById('search-input').oninput = renderPedidos;
 
         document.getElementById('form-pedido').onsubmit = async (e) => {
             e.preventDefault();
@@ -652,6 +791,7 @@
             const sub = items.reduce((s,i) => s + i.monto, 0);
             const desc = parseFloat(document.getElementById('descuento-input').value) || 0;
             const total = sub - desc;
+            
             try {
                 if(id) {
                     await updateDoc(doc(db, 'pedidos', id), { 
@@ -667,13 +807,11 @@
                         moneda, items, subtotal: sub, descuento: desc, monto_total: total,
                         total_pagado: abono, descripcion: document.getElementById('descripcion').value,
                         fecha_entrega: document.getElementById('fecha_entrega').value,
-                        fecha_pedido: serverTimestamp(), estado: 'En Proceso',
-                        estado_pago: abono >= total ? 'Pagado' : (abono > 0 ? 'Abonado' : 'Pendiente'),
+                        fecha_pedido: serverTimestamp(), estado: 'Pendiente',
                         pagos: abono > 0 ? [{ monto: abono, fecha: Timestamp.now() }] : []
                     });
                 }
-                showToast();
-                resetPedidoForm();
+                showToast("Pedido registrado"); resetPedidoForm();
             } catch (err) { alert(err.message); }
         };
 
@@ -686,17 +824,36 @@
             document.getElementById('form-pedido-title').textContent = "Nuevo Pedido";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
         }
+        document.getElementById('cancel-edit-btn').onclick = resetPedidoForm;
+
+        window.editPedido = (id) => {
+            const p = allPedidos.find(x => x.id === id);
+            if(!p) return;
+            showView('pedidos-view');
+            document.getElementById('pedido-id-edit').value = p.id;
+            document.getElementById('cliente-select').value = p.cliente;
+            document.getElementById('moneda-select').value = p.moneda || 'C$';
+            document.getElementById('descripcion').value = p.descripcion;
+            document.getElementById('fecha_entrega').value = p.fecha_entrega;
+            document.getElementById('descuento-input').value = p.descuento || 0;
+            document.getElementById('items-container').innerHTML = '';
+            p.items.forEach(i => addItem(i.cantidad, i.descripcion, i.precio_unitario));
+            window.calcTotal();
+            document.getElementById('abono_inicial').disabled = true;
+            document.getElementById('form-pedido-title').textContent = "Editar Pedido";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            document.getElementById('form-container-pedido').scrollIntoView({ behavior: 'smooth' });
+        };
 
         window.openAbono = (id) => {
             const p = allPedidos.find(x => x.id === id);
             if(!p) return;
             document.getElementById('pago-pedido-id').value = id;
             document.getElementById('pago-modal-total').textContent = `${p.moneda}${p.monto_total.toFixed(2)}`;
-            document.getElementById('pago-modal-pagado').textContent = `${p.moneda}${p.total_pagado.toFixed(2)}`;
-            document.getElementById('pago-modal-saldo').textContent = `${p.moneda}${(p.monto_total - p.total_pagado).toFixed(2)}`;
+            const saldo = p.monto_total - (p.total_pagado || 0);
+            document.getElementById('pago-modal-saldo').textContent = `${p.moneda}${saldo.toFixed(2)}`;
             document.querySelectorAll('.currency-symbol-pago').forEach(s => s.textContent = p.moneda);
-            document.getElementById('pago-modal').classList.remove('hidden');
-            document.getElementById('pago-modal').classList.add('flex');
+            document.getElementById('pago-modal').classList.remove('hidden'); document.getElementById('pago-modal').classList.add('flex');
         };
 
         document.getElementById('form-pago').onsubmit = async (e) => {
@@ -704,25 +861,34 @@
             const id = document.getElementById('pago-pedido-id').value;
             const monto = parseFloat(document.getElementById('pago-monto-input').value);
             const p = allPedidos.find(x => x.id === id);
-            const nvoTotal = p.total_pagado + monto;
+            const nvoTotal = (p.total_pagado || 0) + monto;
             try {
                 await updateDoc(doc(db, 'pedidos', id), {
                     total_pagado: nvoTotal,
-                    pagos: arrayUnion({ monto, fecha: Timestamp.now() }),
-                    estado_pago: nvoTotal >= p.monto_total ? 'Pagado' : 'Abonado'
+                    pagos: arrayUnion({ monto, fecha: Timestamp.now() })
                 });
-                showToast();
+                showToast("Abono registrado"); 
+                document.getElementById('pago-monto-input').value = '';
                 window.closePagoModal();
             } catch(err) { alert(err.message); }
+        };
+
+        window.anularPedido = (id) => {
+            const cm = document.getElementById('confirm-modal');
+            cm.querySelector('#confirm-modal-title').textContent = "¿Anular Pedido?";
+            cm.querySelector('#confirm-modal-text').textContent = "Se ocultará de producción.";
+            cm.classList.remove('hidden'); cm.classList.add('flex');
+            document.getElementById('confirm-modal-confirm-btn').onclick = async () => {
+                try { await updateDoc(doc(db, 'pedidos', id), { estado: 'Anulado' }); showToast("Anulado"); cm.classList.add('hidden'); } catch(e) { }
+            };
+            document.getElementById('confirm-modal-cancel-btn').onclick = () => cm.classList.add('hidden');
         };
 
         window.generatePdf = async (id) => {
             const p = allPedidos.find(x => x.id === id);
             const { jsPDF } = window.jspdf;
             const content = document.getElementById('receipt-content');
-            const cli = allClientes.find(c => c.nombre === p.cliente);
-            const fPed = p.fecha_pedido?.toDate ? p.fecha_pedido.toDate().toLocaleString('es-NI') : 'N/A';
-            content.innerHTML = `<div id="p-pdf" style="width: 78mm; font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; padding: 5mm; color: black; background: white; line-height: 1.3;"><div style="text-align:center; margin-bottom:4mm;"><strong style="font-size:12px;">ARCA DE LA NUEVA ALIANZA</strong><br><p style="font-size:8px; margin: 3px 0; color: #333;">Sublimación, Impresión en gran formato, Disco Móvil, Sistemas...</p><strong>Comprobante de Pedido</strong></div><div style="border-top:1px dashed #000; margin-bottom: 3mm;"></div><p><strong>Cliente:</strong> ${p.cliente}<br><strong>F. Pedido:</strong> ${fPed}<br><strong>Entrega:</strong> ${p.fecha_entrega}</p><div style="border-top:1px dashed #000; margin: 3mm 0;"></div><table style="width:100%; font-size:9px;"><thead><tr><th align="center">Cant</th><th align="left">Desc</th><th align="right">Monto</th></tr></thead><tbody>${p.items.map(i => `<tr><td align="center">${i.cantidad}</td><td>${i.descripcion}</td><td align="right">${i.monto.toFixed(2)}</td></tr>`).join('')}</tbody></table><div style="border-top:1px dashed #000; margin: 2mm 0;"></div><div style="text-align:right;">Subtotal: ${p.moneda}${p.subtotal.toFixed(2)}<br>Descuento: -${p.moneda}${p.descuento.toFixed(2)}<br><strong>TOTAL: ${p.moneda}${p.monto_total.toFixed(2)}</strong></div><div style="border-top:1px dashed #000; margin: 2mm 0;"></div><div style="text-align:right;">Pagado: ${p.moneda}${p.total_pagado.toFixed(2)}<br><strong>SALDO: ${p.moneda}${(p.monto_total - p.total_pagado).toFixed(2)}</strong></div><div style="text-align:center; margin-top:6mm;">¡Gracias!</div></div>`;
+            content.innerHTML = `<div id="p-pdf" style="width: 78mm; font-family: Arial; font-size: 10px; padding: 5mm; color: black; background: white;"><div style="text-align:center;"><strong style="font-size:12px;">ARCA DE LA NUEVA ALIANZA</strong><br>Pedido</div><div style="border-top:1px dashed #000; margin: 3mm 0;"></div><p><strong>Cliente:</strong> ${p.cliente}<br><strong>Entrega:</strong> ${p.fecha_entrega}</p><div style="border-top:1px dashed #000; margin: 3mm 0;"></div><table style="width:100%; font-size:9px;">${p.items.map(i => `<tr><td>${i.cantidad} ${i.descripcion}</td><td align="right">${i.monto.toFixed(2)}</td></tr>`).join('')}</table><div style="border-top:1px dashed #000; margin: 2mm 0;"></div><div style="text-align:right;">Total: ${p.moneda}${p.monto_total.toFixed(2)}<br>Pagado: ${p.moneda}${(p.total_pagado || 0).toFixed(2)}<br><strong>SALDO: ${p.moneda}${(p.monto_total - (p.total_pagado || 0)).toFixed(2)}</strong></div></div>`;
             const canvas = await html2canvas(document.getElementById('p-pdf'), { scale: 3 });
             const pdf = new jsPDF({ unit: 'mm', format: [78, (canvas.height * 78) / canvas.width] });
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 78, (canvas.height * 78) / canvas.width);
