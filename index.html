@@ -159,7 +159,7 @@
     <div id="details-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-2xl max-h-[85vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-                <h2 class="text-xl font-bold">Historial del Cliente</h2>
+                <h2 class="text-xl font-bold">Historial de: <span id="modal-cliente-nombre" class="text-indigo-600"></span></h2>
                 <button id="close-details-modal-btn" class="text-gray-400 hover:text-black text-2xl">&times;</button>
             </div>
             <div id="modal-body" class="p-6 overflow-y-auto"></div>
@@ -289,7 +289,10 @@
                 const div = document.createElement('div');
                 div.className = 'flex justify-between items-center p-3 border rounded-lg bg-gray-50';
                 div.innerHTML = `<div><p class="font-bold">${c.nombre}</p><p class="text-xs text-gray-500">ID: ${c.clienteId?.toString().padStart(4, '0')} | Tel: ${c.telefono}</p></div>
-                <div class="flex gap-2"><button onclick="window.showClientHistory('${c.nombre}')" class="text-indigo-600 text-sm font-bold">Historial</button><button onclick="window.editClient('${c.id}')" class="text-yellow-600 text-sm font-bold">Editar</button></div>`;
+                <div class="flex gap-2">
+                    <button onclick="window.showClientHistory('${c.nombre.replace(/'/g, "\\'")}')" class="text-indigo-600 text-sm font-bold">Historial</button>
+                    <button onclick="window.editClient('${c.id}')" class="text-yellow-600 text-sm font-bold">Editar</button>
+                </div>`;
                 list.appendChild(div);
             });
         }
@@ -352,21 +355,39 @@
         };
 
         window.showClientHistory = (nombre) => {
-            const history = allPedidos.filter(p => p.cliente === nombre);
+            const history = allPedidos.filter(p => p.cliente.trim() === nombre.trim());
             const modal = document.getElementById('details-modal');
             const body = document.getElementById('modal-body');
-            document.getElementById('modal-cliente-nombre').textContent = nombre;
-            body.innerHTML = history.length ? '' : '<p>Sin pedidos.</p>';
-            history.forEach(p => {
+            const nameSpan = document.getElementById('modal-cliente-nombre');
+            
+            if (nameSpan) nameSpan.textContent = nombre;
+            
+            body.innerHTML = history.length ? '' : '<p class="text-gray-500 italic">No hay pedidos registrados para este cliente.</p>';
+            
+            history.sort((a, b) => new Date(b.fecha_entrega) - new Date(a.fecha_entrega)).forEach(p => {
                 const saldo = p.monto_total - p.total_pagado;
                 const d = document.createElement('div');
-                d.className = 'mb-4 p-3 border-l-4 border-indigo-400 bg-gray-50';
-                d.innerHTML = `<p class="font-bold">${p.descripcion}</p><p class="text-sm">Total: ${p.moneda}${p.monto_total.toFixed(2)} | Saldo: <span class="${saldo > 0 ? 'text-red-600' : 'text-green-600'}">${p.moneda}${saldo.toFixed(2)}</span></p>`;
+                d.className = 'mb-4 p-4 border rounded-lg bg-gray-50 shadow-sm';
+                d.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-indigo-700">${p.descripcion}</p>
+                            <p class="text-xs text-gray-500 mt-1">Entrega: ${p.fecha_entrega}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold">${p.moneda || 'C$'}${p.monto_total.toFixed(2)}</p>
+                            <p class="text-sm font-semibold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}">
+                                ${saldo > 0 ? 'Pendiente: ' + (p.moneda || 'C$') + saldo.toFixed(2) : 'PAGADO'}
+                            </p>
+                        </div>
+                    </div>
+                `;
                 body.appendChild(d);
             });
             modal.classList.remove('hidden'); modal.classList.add('flex');
         };
 
+        // GESTIÓN DE PEDIDOS
         function listenToPedidos() {
             onSnapshot(pedidosRef, (snap) => {
                 allPedidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -410,8 +431,8 @@
             const p = allPedidos.find(x => x.id === id);
             const cli = allClientes.find(c => c.nombre === p.cliente);
             
-            // TU NÚMERO DE NEGOCIO (Configúralo aquí)
-            const miNumero = "50585971832"; // Cambia este número por el tuyo (con código de país)
+            // TU NÚMERO DE NEGOCIO (Actualizado)
+            const miNumero = "50586486539";
 
             let phone = toBusiness ? miNumero : (cli?.telefono ? cli.telefono.replace(/\D/g, '') : "");
             
@@ -455,10 +476,6 @@
             row.querySelectorAll('input').forEach(i => i.oninput = window.calcTotal);
         };
         document.getElementById('add-item-btn').onclick = () => addItem();
-
-        document.getElementById('moneda-select').onchange = (e) => {
-            document.querySelectorAll('.currency-symbol').forEach(s => s.textContent = e.target.value);
-        };
 
         window.editPedido = (id) => {
             const p = allPedidos.find(x => x.id === id);
