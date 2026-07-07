@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestor de Pedidos | Arca de la Nueva Alianza</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+</head>
+<body>
+  <div id="toast" class="toast" hidden></div>
+
+  <header class="app-header no-print">
+    <div>
+      <p class="eyebrow">Sistema de producción y cobranza</p>
+      <h1>Arca de la Nueva Alianza</h1>
+    </div>
+    <div class="status-pill" id="sync-status">Conectando…</div>
+  </header>
+
+  <main class="app-shell">
+    <section id="view-dashboard" class="view active">
+      <div class="hero-card">
+        <div>
+          <p class="eyebrow">Panel principal</p>
+          <h2>Gestor de Pedidos</h2>
+          <p>Clientes, producción, abonos, saldos y reportes en un solo lugar.</p>
+        </div>
+        <button class="primary" data-action="open-order-form">+ Nuevo pedido</button>
+      </div>
+
+      <div class="summary-grid" id="summary-cards"></div>
+
+      <div class="menu-grid">
+        <button class="menu-card" data-view="clientes"><strong>Clientes</strong><span>Directorio e historial</span></button>
+        <button class="menu-card" data-view="pedidos"><strong>Producción</strong><span>Órdenes y estados</span></button>
+        <button class="menu-card" data-view="cobranza"><strong>Cobranza</strong><span>Saldos pendientes</span></button>
+        <button class="menu-card" data-view="reportes"><strong>Reportes</strong><span>PDF y cierres</span></button>
+      </div>
+
+      <section class="panel">
+        <div class="panel-title">
+          <h3>Pedidos urgentes</h3>
+          <button class="link-button" data-view="pedidos">Ver producción</button>
+        </div>
+        <div id="urgent-orders" class="card-list"></div>
+      </section>
+    </section>
+
+    <section id="view-clientes" class="view">
+      <button class="back" data-view="dashboard">← Volver al menú</button>
+      <div class="two-column">
+        <section class="panel">
+          <h2 id="client-form-title">Registrar cliente</h2>
+          <form id="client-form" class="form-stack">
+            <input type="hidden" id="client-doc-id" />
+            <label>ID<input id="client-public-id" disabled placeholder="Automático" /></label>
+            <label>Nombre completo<input id="client-name" required autocomplete="name" /></label>
+            <label>WhatsApp<input id="client-phone" required placeholder="50588889999" autocomplete="tel" /></label>
+            <div class="form-actions">
+              <button type="button" class="ghost" id="cancel-client-edit" hidden>Cancelar</button>
+              <button class="primary" type="submit">Guardar cliente</button>
+            </div>
+          </form>
+        </section>
+        <section class="panel">
+          <div class="panel-title">
+            <h2>Lista de clientes</h2>
+            <input class="search" id="client-search" placeholder="Buscar cliente..." />
+          </div>
+          <div id="clients-list" class="card-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="view-pedidos" class="view">
+      <button class="back" data-view="dashboard">← Volver al menú</button>
+      <div class="panel">
+        <div class="panel-title wrap">
+          <div>
+            <h2>Control de producción</h2>
+            <p>Ordena los trabajos por fecha, estado y saldo.</p>
+          </div>
+          <button class="primary" data-action="open-order-form">+ Nuevo pedido</button>
+        </div>
+        <div class="toolbar">
+          <input class="search" id="order-search" placeholder="Buscar cliente o pedido..." />
+          <div class="filters" id="order-filters">
+            <button class="chip active" data-filter="activos">Activos</button>
+            <button class="chip" data-filter="Pendiente">Pendiente</button>
+            <button class="chip" data-filter="En diseño">En diseño</button>
+            <button class="chip" data-filter="En producción">En producción</button>
+            <button class="chip" data-filter="Listo">Listo</button>
+            <button class="chip" data-filter="Entregado">Entregado</button>
+            <button class="chip" data-filter="todos">Todos</button>
+          </div>
+        </div>
+        <div id="orders-list" class="card-list"></div>
+      </div>
+    </section>
+
+    <section id="view-cobranza" class="view">
+      <button class="back" data-view="dashboard">← Volver al menú</button>
+      <div class="panel">
+        <div class="panel-title wrap">
+          <div>
+            <h2>Cobranza</h2>
+            <p>Pedidos con saldo pendiente, abonos y recordatorios por WhatsApp.</p>
+          </div>
+          <button class="secondary" data-report="cobranza">Descargar PDF</button>
+        </div>
+        <div class="summary-grid" id="debt-summary"></div>
+        <div id="debt-list" class="card-list"></div>
+      </div>
+    </section>
+
+    <section id="view-reportes" class="view">
+      <button class="back" data-view="dashboard">← Volver al menú</button>
+      <div class="panel">
+        <div class="panel-title wrap">
+          <div>
+            <h2>Reportes</h2>
+            <p>Filtra la información, revisa la vista previa y luego descarga el PDF.</p>
+          </div>
+          <button class="primary" id="report-download" type="button">Descargar PDF</button>
+        </div>
+
+        <div class="report-grid compact-grid">
+          <button class="report-card" data-report-type="produccion"><strong>Producción</strong><span>Pedidos activos y trabajos por entregar</span></button>
+          <button class="report-card" data-report-type="cobranza"><strong>Cobranza</strong><span>Clientes con saldos pendientes</span></button>
+          <button class="report-card" data-report-type="ventas"><strong>Ventas</strong><span>Totales, pagado y saldo por moneda</span></button>
+        </div>
+
+        <div class="report-filters">
+          <label>Tipo de reporte
+            <select id="report-type">
+              <option value="produccion">Producción</option>
+              <option value="cobranza">Cobranza</option>
+              <option value="ventas">Ventas</option>
+            </select>
+          </label>
+          <label>Fecha a filtrar
+            <select id="report-date-field">
+              <option value="fecha_entrega">Fecha de entrega</option>
+              <option value="createdAt">Fecha de registro</option>
+              <option value="updatedAt">Última actualización</option>
+            </select>
+          </label>
+          <label>Desde<input id="report-start" type="date" /></label>
+          <label>Hasta<input id="report-end" type="date" /></label>
+          <label>Estado
+            <select id="report-status">
+              <option value="activos">Activos</option>
+              <option value="no-anulados">No anulados</option>
+              <option value="todos">Todos</option>
+              <option>Pendiente</option>
+              <option>En diseño</option>
+              <option>En producción</option>
+              <option>Listo</option>
+              <option>Entregado</option>
+              <option>Anulado</option>
+            </select>
+          </label>
+          <label>Moneda
+            <select id="report-currency">
+              <option value="todas">Todas</option>
+              <option value="C$">Córdobas C$</option>
+              <option value="$">Dólares $</option>
+            </select>
+          </label>
+          <label>Cliente
+            <select id="report-client"><option value="todos">Todos los clientes</option></select>
+          </label>
+          <label>Pago
+            <select id="report-payment">
+              <option value="todos">Todos</option>
+              <option value="pendiente">Con saldo pendiente</option>
+              <option value="pagado">Pagados</option>
+            </select>
+          </label>
+          <label class="span-2">Buscar
+            <input id="report-search" placeholder="Cliente, pedido, fecha o estado..." />
+          </label>
+          <div class="filter-actions">
+            <button class="ghost" id="report-clear" type="button">Limpiar filtros</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel report-preview-panel" id="report-preview-panel">
+        <div class="panel-title wrap">
+          <div>
+            <h3 id="report-preview-title">Vista previa: reporte de producción</h3>
+            <p>Esta es la información que se incluirá en el PDF.</p>
+          </div>
+        </div>
+        <div class="summary-grid report-summary" id="report-summary"></div>
+        <div id="report-preview"></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="order-dialog" class="modal">
+    <form id="order-form" class="form-stack modal-card">
+      <div class="panel-title">
+        <h2 id="order-form-title">Nuevo pedido</h2>
+        <button type="button" class="icon-button" data-action="close-order-form">×</button>
+      </div>
+      <input type="hidden" id="order-doc-id" />
+      <div class="grid-2">
+        <label>Cliente
+          <div class="inline-control">
+            <select id="order-client" required></select>
+            <button type="button" class="small-button" data-view="clientes" data-action="close-order-form">+</button>
+          </div>
+        </label>
+        <label>Moneda
+          <select id="order-currency"><option value="C$">C$ - Córdobas</option><option value="$">$ - Dólares</option></select>
+        </label>
+      </div>
+      <div class="grid-2">
+        <label>Fecha de entrega<input id="order-delivery" type="date" required /></label>
+        <label>Estado
+          <select id="order-status">
+            <option>Pendiente</option><option>En diseño</option><option>En producción</option><option>Listo</option><option>Entregado</option><option>Anulado</option>
+          </select>
+        </label>
+      </div>
+      <label>Descripción general<textarea id="order-description" rows="2" required placeholder="Ej: camisetas, taza personalizada, banner..."></textarea></label>
+      <div>
+        <div class="panel-title compact"><h3>Productos</h3><button type="button" class="link-button" id="add-item">+ Agregar fila</button></div>
+        <div id="items-container" class="items-container"></div>
+      </div>
+      <div class="totals-box">
+        <label>Descuento<input id="order-discount" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Abono inicial<input id="order-initial-payment" type="number" min="0" step="0.01" value="0" /></label>
+        <div><span>Subtotal</span><strong id="order-subtotal">0.00</strong></div>
+        <div><span>Total</span><strong id="order-total">0.00</strong></div>
+        <div><span>Saldo</span><strong id="order-balance">0.00</strong></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="ghost" data-action="close-order-form">Cancelar</button>
+        <button class="primary" type="submit">Guardar pedido</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="payment-dialog" class="modal">
+    <form id="payment-form" class="form-stack modal-card small-modal">
+      <div class="panel-title">
+        <h2>Registrar abono</h2>
+        <button type="button" class="icon-button" data-action="close-payment-form">×</button>
+      </div>
+      <input type="hidden" id="payment-order-id" />
+      <div id="payment-info" class="payment-info"></div>
+      <label>Monto a recibir<input id="payment-amount" type="number" min="0.01" step="0.01" required /></label>
+      <button class="primary" type="submit">Confirmar pago</button>
+    </form>
+  </dialog>
+
+  <dialog id="detail-dialog" class="modal">
+    <div class="modal-card">
+      <div class="panel-title">
+        <h2 id="detail-title">Detalle</h2>
+        <button type="button" class="icon-button" data-action="close-detail">×</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+  </dialog>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
