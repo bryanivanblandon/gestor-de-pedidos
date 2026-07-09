@@ -21,6 +21,7 @@ export function showView(name) {
   state.currentView = name;
   qsa('.view').forEach(v => v.classList.remove('active'));
   qs(`#view-${name}`)?.classList.add('active');
+  qsa('.launcher-nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === name));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 

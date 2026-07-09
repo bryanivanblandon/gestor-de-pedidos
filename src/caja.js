@@ -27,9 +27,17 @@ function normalizeShiftStatus(value = '') {
   return String(value || '').trim().toLowerCase();
 }
 
+function ignoredShiftIds() {
+  return Array.isArray(state.config?.ignoredShiftIds) ? state.config.ignoredShiftIds : [];
+}
+
+function isIgnoredShift(t = {}) {
+  return ignoredShiftIds().includes(t.id);
+}
+
 function isOpenShift(t = {}) {
   const status = normalizeShiftStatus(t.estado);
-  return status === 'abierto' || status === 'abierta' || status === 'activo' || status === 'activa' || status === 'open';
+  return (status === 'abierto' || status === 'abierta' || status === 'activo' || status === 'activa' || status === 'open') && !isIgnoredShift(t);
 }
 
 function isClosedShift(t = {}) {
@@ -43,11 +51,15 @@ export function getActiveShift() {
     .sort((a, b) => shiftSortValue(b) - shiftSortValue(a))[0] || null;
 }
 
-async function fetchOpenShiftsFromFirestore() {
+async function fetchOpenShiftsFromFirestore(includeIgnored = false) {
   const snap = await getDocs(cajaTurnosRef);
   return snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
-    .filter(isOpenShift)
+    .filter(t => {
+      const status = normalizeShiftStatus(t.estado);
+      const open = status === 'abierto' || status === 'abierta' || status === 'activo' || status === 'activa' || status === 'open';
+      return includeIgnored ? open : (open && !isIgnoredShift(t));
+    })
     .sort((a, b) => shiftSortValue(b) - shiftSortValue(a));
 }
 
@@ -88,15 +100,16 @@ export function renderCaja() {
   const tcInput = qs('#cash-exchange-rate');
   if (tcInput && document.activeElement !== tcInput) tcInput.value = Number(state.config?.tipoCambio || 36.5);
   const openCount = state.cajaTurnos.filter(isOpenShift).length;
+  const ignoredCount = ignoredShiftIds().length;
   if (!status) return;
 
   if (!shift) {
-    status.innerHTML = '<span class="status pendiente">Caja cerrada</span><p>Abre un turno para facturar, cobrar pedidos, registrar gastos y cerrar con conteo de billetes.</p>';
+    status.innerHTML = `<span class="status pendiente">Caja cerrada</span><p>Abre un turno para facturar, cobrar pedidos, registrar gastos y cerrar con conteo de billetes.</p>${ignoredCount ? `<p class="warning-text">Hay ${ignoredCount} turno(s) antiguos ignorados por recuperación. Ya no bloquean la caja, pero conviene revisarlos luego en Firebase.</p>` : ''}`;
     openPanel.hidden = false;
     activePanel.hidden = true;
   } else {
     const totals = shiftTotals(shift);
-    status.innerHTML = `<span class="status activo">Caja abierta</span><p>Turno iniciado el ${escapeHtml(shift.fecha || todayISO())}. Tipo de cambio activo: <strong>C$${totals.tipoCambio.toFixed(2)}</strong> por $1.</p>${openCount > 1 ? '<p class="warning-text">Aviso: hay más de un turno abierto. Cierra el turno activo o usa recuperación administrativa.</p>' : ''}`;
+    status.innerHTML = `<span class="status activo">Caja abierta</span><p>Turno iniciado el ${escapeHtml(shift.fecha || todayISO())}. Tipo de cambio activo: <strong>C$${totals.tipoCambio.toFixed(2)}</strong> por $1.</p>${openCount > 1 ? '<p class="warning-text">Aviso: hay más de un turno abierto. Cierra el turno activo o usa recuperación administrativa.</p>' : ''}${ignoredCount ? `<p class="warning-text">Se ignoraron ${ignoredCount} turno(s) antiguos que no se pudieron cerrar automáticamente.</p>` : ''}`;
     openPanel.hidden = true;
     activePanel.hidden = false;
     summary.innerHTML = `
@@ -224,6 +237,16 @@ function mergeCajaTurnos(current = [], fetched = []) {
   return Array.from(map.values());
 }
 
+async function persistIgnoredShiftIds(ids = []) {
+  const unique = Array.from(new Set([...(ignoredShiftIds()), ...ids.filter(Boolean)]));
+  state.config = { ...state.config, ignoredShiftIds: unique };
+  try {
+    await setDoc(configRef, { ignoredShiftIds: unique, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (error) {
+    console.warn('No pude guardar ignoredShiftIds en config:', error);
+  }
+}
+
 export async function forceCloseActiveShift() {
   const user = auth.currentUser;
   if (!user) {
@@ -234,7 +257,7 @@ export async function forceCloseActiveShift() {
   let openShifts = [];
 
   try {
-    const remoteOpen = await fetchOpenShiftsFromFirestore();
+    const remoteOpen = await fetchOpenShiftsFromFirestore(true);
     openShifts = mergeCajaTurnos(localOpen, remoteOpen).filter(isOpenShift);
   } catch (error) {
     console.error('Error leyendo turnos para recuperación:', error);
@@ -256,10 +279,11 @@ export async function forceCloseActiveShift() {
   if (!ok) return;
 
   const failed = [];
+  const hidden = [];
   for (const shift of openShifts) {
     try {
       const totals = shiftTotals(shift);
-      await updateDoc(doc(db, 'cajaTurnos', shift.id), {
+      const payload = {
         estado: 'cerrado',
         cierre: totals.efectivoEsperado,
         diferencia: 0,
@@ -268,17 +292,47 @@ export async function forceCloseActiveShift() {
         totales: totals,
         closedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      });
+      };
+      try {
+        await updateDoc(doc(db, 'cajaTurnos', shift.id), payload);
+      } catch (error) {
+        if (String(error?.code || '').includes('not-found')) {
+          await setDoc(doc(db, 'cajaTurnos', shift.id), payload, { merge: true });
+        } else {
+          throw error;
+        }
+      }
     } catch (error) {
       console.error(`No se pudo cerrar turno ${shift.id}:`, error);
       failed.push({ id: shift.id, code: error?.code || 'error', message: error?.message || '' });
+      hidden.push(shift.id);
     }
   }
+
+  if (hidden.length) {
+    await persistIgnoredShiftIds(hidden);
+  }
+
+  state.cajaTurnos = state.cajaTurnos.map(t => {
+    if (openShifts.some(s => s.id === t.id) && !hidden.includes(t.id)) return { ...t, estado: 'cerrado', cierreAdministrativo: true };
+    if (hidden.includes(t.id)) return { ...t, ignoradoPorRecuperacion: true };
+    return t;
+  });
+
+  await new Promise(resolve => setTimeout(resolve, 300));
+  try {
+    state.cajaTurnos = mergeCajaTurnos(state.cajaTurnos, await fetchOpenShiftsFromFirestore(true));
+  } catch (error) {
+    console.warn('No se pudo refrescar después del cierre:', error);
+  }
+  renderCaja();
 
   if (failed.length) {
     const permission = failed.some(f => String(f.code).includes('permission-denied'));
     const msg = failed.map(f => `${f.id}: ${f.code}`).join(' | ');
-    if (permission) {
+    if (hidden.length) {
+      toast(`No pude cerrar ${hidden.length} turno(s), pero fueron ignorados para que la caja ya no quede bloqueada. ${permission ? 'Revisa tus reglas de Firebase.' : msg}`);
+    } else if (permission) {
       toast('Firebase negó el cierre. Debes publicar firestore.rules en Firebase Console. Detalle: ' + msg);
     } else {
       toast('Algunos turnos no se pudieron cerrar: ' + msg);
@@ -286,14 +340,6 @@ export async function forceCloseActiveShift() {
     return;
   }
 
-  state.cajaTurnos = state.cajaTurnos.map(t => openShifts.some(s => s.id === t.id) ? { ...t, estado: 'cerrado', cierreAdministrativo: true } : t);
-  await new Promise(resolve => setTimeout(resolve, 300));
-  try {
-    state.cajaTurnos = mergeCajaTurnos(state.cajaTurnos, await fetchOpenShiftsFromFirestore());
-  } catch (error) {
-    console.warn('No se pudo refrescar después del cierre:', error);
-  }
-  renderCaja();
   toast('Turno(s) cerrado(s) administrativamente. Ya puedes abrir una caja nueva.');
 }
 

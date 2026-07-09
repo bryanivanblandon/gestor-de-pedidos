@@ -8,6 +8,7 @@ export const state = {
   usuarioInterno: null,
   config: {
     tipoCambio: 36.5,
+    ignoredShiftIds: [],
   },
   currentView: 'dashboard',
   orderFilter: 'activos',

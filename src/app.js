@@ -139,6 +139,7 @@ function bindNavigation() {
   qsa('[data-action="close-detail"]').forEach(btn => btn.addEventListener('click', () => closeDialog('#detail-dialog')));
   qsa('[data-action="close-quote-form"]').forEach(btn => btn.addEventListener('click', () => resetQuoteForm(true)));
   qs('#open-quote-form')?.addEventListener('click', () => openQuoteForm());
+  qs('#open-quote-form-dashboard')?.addEventListener('click', () => openQuoteForm());
 
   qs('#order-search').addEventListener('input', e => {
     state.orderSearch = e.target.value;

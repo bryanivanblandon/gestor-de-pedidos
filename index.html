@@ -41,36 +41,61 @@
 
   <main class="app-shell app-private" hidden>
     <section id="view-dashboard" class="view active">
-      <div class="hero-card">
-        <div>
-          <p class="eyebrow">Panel principal</p>
-          <h2>Gestor de Pedidos</h2>
-          <p>Clientes, pedidos, caja, cobranza, producción y reportes en un solo lugar.</p>
+      <div class="desktop-home">
+        <aside class="launcher-sidebar panel">
+          <div class="sidebar-brand">
+            <p class="eyebrow">Menú principal</p>
+            <h2>POS Arca</h2>
+            <p class="muted-note">Accesos rápidos al sistema de ventas, caja e inventario.</p>
+          </div>
+          <div class="launcher-nav">
+            <button class="launcher-nav-btn active" data-view="dashboard"><span>▣</span><strong>Dashboard</strong></button>
+            <button class="launcher-nav-btn" data-view="clientes"><span>👥</span><strong>Clientes</strong></button>
+            <button class="launcher-nav-btn" data-view="pedidos"><span>🧾</span><strong>Facturación / Pedidos</strong></button>
+            <button class="launcher-nav-btn" data-view="cotizaciones"><span>💬</span><strong>Cotizaciones</strong></button>
+            <button class="launcher-nav-btn" data-view="caja"><span>💵</span><strong>Caja</strong></button>
+            <button class="launcher-nav-btn" data-view="inventario"><span>📦</span><strong>Inventario</strong></button>
+            <button class="launcher-nav-btn" data-view="reportes"><span>📊</span><strong>Reportes</strong></button>
+            <button class="launcher-nav-btn permiso-admin" data-view="configuracion"><span>⚙️</span><strong>Configuración</strong></button>
+          </div>
+        </aside>
+
+        <div class="launcher-content">
+          <div class="desktop-hero panel">
+            <div>
+              <p class="eyebrow">Sistema POS, caja y producción</p>
+              <h2>Bienvenido al panel principal</h2>
+              <p>Gestiona clientes, ventas, caja, inventario, cotizaciones y reportes desde una sola pantalla.</p>
+            </div>
+            <div class="desktop-hero-actions">
+              <button class="primary" data-action="open-order-form">+ Nueva factura / pedido</button>
+              <button class="secondary" id="open-quote-form-dashboard" type="button">+ Nueva cotización</button>
+            </div>
+          </div>
+
+          <div class="summary-grid" id="summary-cards"></div>
+          <div id="dashboard-cash-gate"></div>
+
+          <div class="launcher-board">
+            <button class="launcher-tile tile-clientes" data-view="clientes"><span class="tile-icon">👥</span><strong>Clientes</strong><small>Directorio e historial</small></button>
+            <button class="launcher-tile tile-facturacion" data-view="pedidos"><span class="tile-icon">🧾</span><strong>Facturación</strong><small>Pedidos, ticket y producción</small></button>
+            <button class="launcher-tile tile-cotizaciones" data-view="cotizaciones"><span class="tile-icon">💬</span><strong>Cotizaciones</strong><small>Presupuestos y conversión</small></button>
+            <button class="launcher-tile tile-caja" data-view="caja"><span class="tile-icon">💵</span><strong>Caja</strong><small>Turnos, gastos y cierre</small></button>
+            <button class="launcher-tile tile-inventario" data-view="inventario"><span class="tile-icon">📦</span><strong>Inventario</strong><small>Stock, kardex y costos</small></button>
+            <button class="launcher-tile tile-cobranza" data-view="cobranza"><span class="tile-icon">💳</span><strong>Cobranza</strong><small>Estados de cuenta y abonos</small></button>
+            <button class="launcher-tile tile-reportes" data-view="reportes"><span class="tile-icon">📊</span><strong>Reportes</strong><small>Vista previa e impresión PDF</small></button>
+            <button class="launcher-tile tile-config permiso-admin" data-view="configuracion"><span class="tile-icon">⚙️</span><strong>Configuración</strong><small>Usuarios y parámetros</small></button>
+          </div>
+
+          <section class="panel">
+            <div class="panel-title">
+              <h3>Pedidos urgentes</h3>
+              <button class="link-button" data-view="pedidos">Ver producción</button>
+            </div>
+            <div id="urgent-orders" class="card-list"></div>
+          </section>
         </div>
-        <button class="primary" data-action="open-order-form">+ Nuevo pedido</button>
       </div>
-
-      <div class="summary-grid" id="summary-cards"></div>
-      <div id="dashboard-cash-gate"></div>
-
-      <div class="menu-grid">
-        <button class="menu-card" data-view="clientes"><strong>Clientes</strong><span>Directorio e historial</span></button>
-        <button class="menu-card" data-view="pedidos"><strong>Producción</strong><span>Órdenes y estados</span></button>
-        <button class="menu-card" data-view="cobranza"><strong>Cobranza</strong><span>Saldos pendientes</span></button>
-        <button class="menu-card" data-view="caja"><strong>Caja</strong><span>Abrir, cobrar, gastos y cierre</span></button>
-        <button class="menu-card" data-view="inventario"><strong>Inventario</strong><span>Productos, stock y kardex</span></button>
-        <button class="menu-card" data-view="cotizaciones"><strong>Cotizaciones</strong><span>Presupuestos y conversión a pedido</span></button>
-        <button class="menu-card" data-view="reportes"><strong>Reportes</strong><span>PDF y cierres</span></button>
-        <button class="menu-card permiso-admin" data-view="configuracion"><strong>Configuración</strong><span>Usuarios, permisos y negocio</span></button>
-      </div>
-
-      <section class="panel">
-        <div class="panel-title">
-          <h3>Pedidos urgentes</h3>
-          <button class="link-button" data-view="pedidos">Ver producción</button>
-        </div>
-        <div id="urgent-orders" class="card-list"></div>
-      </section>
     </section>
 
     <section id="view-clientes" class="view">

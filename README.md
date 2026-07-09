@@ -68,3 +68,9 @@ No requiere build. Sube todo el contenido del proyecto y Vercel lo publicará co
 ## Corrección de caja trabada
 
 Esta versión mejora la recuperación de caja: el botón **Cerrar turno abierto administrativamente** ya no depende solo del estado cargado en pantalla. Ahora consulta directamente la colección `cajaTurnos` en Firebase, detecta cualquier turno con estado abierto/abierta/activo/open y lo cierra administrativamente. Si había más de un turno abierto por error, los cierra todos para permitir abrir una caja nueva.
+
+
+## Novedades de esta actualización
+
+- Recuperación de caja trabada más robusta: si un turno viejo no se puede cerrar, el sistema puede **ignorarlo** desde `config/pos.ignoredShiftIds` para que ya no bloquee la apertura de una caja nueva.
+- Menú principal rediseñado con estilo más parecido a software de escritorio: accesos rápidos en barra lateral y mosaicos de colores.

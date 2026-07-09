@@ -178,3 +178,111 @@ button.danger,
   color: #6b7280;
   cursor: not-allowed;
 }
+
+/* Dashboard estilo software */
+.desktop-home {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+.launcher-sidebar {
+  position: sticky;
+  top: 18px;
+  padding: 18px;
+  background: linear-gradient(180deg, #18212f 0%, #253244 100%);
+  color: #fff;
+}
+.launcher-sidebar .eyebrow,
+.launcher-sidebar .muted-note,
+.launcher-sidebar h2 {
+  color: #fff;
+}
+.launcher-nav {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+.launcher-nav-btn {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.08);
+  color: #e5eef9;
+  font-weight: 800;
+}
+.launcher-nav-btn span { font-size: 1.05rem; }
+.launcher-nav-btn.active,
+.launcher-nav-btn:hover {
+  background: rgba(255,255,255,.16);
+  color: #fff;
+}
+.launcher-content {
+  display: grid;
+  gap: 18px;
+}
+.desktop-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
+}
+.desktop-hero p:last-child { color: var(--muted); margin-bottom: 0; }
+.desktop-hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.launcher-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.launcher-tile {
+  min-height: 132px;
+  padding: 18px;
+  border-radius: 20px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  box-shadow: 0 12px 24px rgba(15,23,42,.12);
+  transition: transform .18s ease, filter .18s ease;
+}
+.launcher-tile:hover { transform: translateY(-3px); filter: brightness(1.03); }
+.launcher-tile strong { font-size: 1.08rem; }
+.launcher-tile small { color: rgba(255,255,255,.9); font-size: .86rem; }
+.tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,.18);
+  font-size: 1.2rem;
+}
+.tile-clientes { background: linear-gradient(135deg, #f59e0b, #f97316); }
+.tile-facturacion { background: linear-gradient(135deg, #1d4ed8, #60a5fa); }
+.tile-cotizaciones { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+.tile-caja { background: linear-gradient(135deg, #16a34a, #15803d); }
+.tile-inventario { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+.tile-cobranza { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.tile-reportes { background: linear-gradient(135deg, #0891b2, #0f766e); }
+.tile-config { background: linear-gradient(135deg, #475569, #1f2937); }
+
+@media (max-width: 1100px) {
+  .desktop-home { grid-template-columns: 1fr; }
+  .launcher-sidebar { position: static; }
+  .launcher-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .desktop-hero { flex-direction: column; align-items: flex-start; }
+  .launcher-board { grid-template-columns: 1fr; }
+}
