@@ -75,7 +75,7 @@ export function getPaymentsForShift(shift = getActiveShift()) {
     (p.pagos || []).forEach(pay => {
       const sameShift = pay.turnoId && pay.turnoId === shift.id;
       const legacyToday = !pay.turnoId && (pay.fecha || '').slice(0, 10) === (shift.fecha || todayISO());
-      if (sameShift || legacyToday) rows.push({ pedido: p, pago: pay, monto: Number(pay.monto || 0), moneda: p.moneda || 'C$' });
+      if (sameShift || legacyToday) rows.push({ pedido: p, pago: pay, monto: Number(pay.monto || 0), moneda: p.moneda || 'C$', metodo: pay.metodo || 'efectivo' });
     });
   });
   return rows;
@@ -87,10 +87,29 @@ function shiftTotals(shift = getActiveShift()) {
   const gastos = (shift?.gastos || []).reduce((s, g) => s + Number(g.monto || 0), 0);
   const ingresosManual = (shift?.ingresosManuales || []).reduce((s, g) => s + Number(g.monto || 0), 0);
   const payments = getPaymentsForShift(shift);
-  const pagosCs = payments.filter(r => r.moneda === 'C$').reduce((s, r) => s + r.monto, 0);
-  const pagosUsd = payments.filter(r => r.moneda === '$').reduce((s, r) => s + r.monto, 0);
-  const usdEnCs = pagosUsd * tc;
-  return { apertura, gastos, ingresosManual, pagosCs, pagosUsd, usdEnCs, tipoCambio: tc, efectivoEsperado: apertura + pagosCs + usdEnCs + ingresosManual - gastos };
+  const byMethod = method => payments.filter(r => (r.metodo || 'efectivo') === method);
+  const efectivo = byMethod('efectivo');
+  const tarjeta = byMethod('tarjeta');
+  const transferencia = byMethod('transferencia');
+  const pagosEfectivoCs = efectivo.filter(r => r.moneda === 'C$').reduce((s, r) => s + r.monto, 0);
+  const pagosEfectivoUsd = efectivo.filter(r => r.moneda === '$').reduce((s, r) => s + r.monto, 0);
+  const tarjetaCs = tarjeta.reduce((s, r) => s + (r.moneda === '$' ? r.monto * tc : r.monto), 0);
+  const transferenciaCs = transferencia.reduce((s, r) => s + (r.moneda === '$' ? r.monto * tc : r.monto), 0);
+  const usdEnCs = pagosEfectivoUsd * tc;
+  const ventasTotalCs = payments.reduce((s, r) => s + (r.moneda === '$' ? r.monto * tc : r.monto), 0);
+  return {
+    apertura,
+    gastos,
+    ingresosManual,
+    pagosCs: pagosEfectivoCs,
+    pagosUsd: pagosEfectivoUsd,
+    usdEnCs,
+    tarjetaCs,
+    transferenciaCs,
+    ventasTotalCs,
+    tipoCambio: tc,
+    efectivoEsperado: apertura + pagosEfectivoCs + usdEnCs + ingresosManual - gastos
+  };
 }
 
 export function renderCaja() {
@@ -119,12 +138,14 @@ export function renderCaja() {
     activePanel.hidden = false;
     summary.innerHTML = `
       <div class="summary-card"><span>Apertura</span><strong>${money(totals.apertura, 'C$')}</strong></div>
-      <div class="summary-card"><span>Cobros C$</span><strong>${money(totals.pagosCs, 'C$')}</strong></div>
-      <div class="summary-card"><span>Cobros $</span><strong>${money(totals.pagosUsd, '$')}</strong></div>
-      <div class="summary-card"><span>Dólares en C$</span><strong>${money(totals.usdEnCs, 'C$')}</strong></div>
-      <div class="summary-card"><span>Gastos</span><strong>${money(totals.gastos, 'C$')}</strong></div>
-      <div class="summary-card"><span>Efectivo esperado</span><strong>${money(totals.efectivoEsperado, 'C$')}</strong></div>`;
-    const pagos = getPaymentsForShift(shift).map(r => `<tr><td>${escapeHtml(r.pago.fecha || '')}</td><td>Cobro</td><td>${escapeHtml(r.pedido.cliente || '')} · ${escapeHtml(shortOrderDescription(r.pedido))}</td><td>${money(r.monto, r.moneda)}</td><td><button class="action" data-order-ticket="${r.pedido.id}">Ticket</button></td></tr>`).join('');
+      <div class="summary-card"><span>Efectivo C$</span><strong>${money(totals.pagosCs, 'C$')}</strong></div>
+      <div class="summary-card"><span>Efectivo $</span><strong>${money(totals.pagosUsd, '$')}</strong></div>
+      <div class="summary-card"><span>Tarjeta</span><strong>${money(totals.tarjetaCs, 'C$')}</strong></div>
+      <div class="summary-card"><span>Transferencia</span><strong>${money(totals.transferenciaCs, 'C$')}</strong></div>
+      <div class="summary-card"><span>Ingresos extra</span><strong>${money(totals.ingresosManual, 'C$')}</strong></div>
+      <div class="summary-card danger-summary"><span>Gastos</span><strong>-${money(totals.gastos, 'C$')}</strong></div>
+      <div class="summary-card expected-summary"><span>Efectivo esperado</span><strong>${money(totals.efectivoEsperado, 'C$')}</strong><small>Apertura + efectivo + ingresos - gastos. Tarjeta/transferencia no suman al efectivo.</small></div>`;
+    const pagos = getPaymentsForShift(shift).map(r => `<tr><td>${escapeHtml(r.pago.fecha || '')}</td><td>Cobro ${escapeHtml(r.metodo || 'efectivo')}</td><td>${escapeHtml(r.pedido.cliente || '')} · ${escapeHtml(shortOrderDescription(r.pedido))}</td><td>${money(r.monto, r.moneda)}</td><td><button class="action" data-order-ticket="${r.pedido.id}">Ticket</button></td></tr>`).join('');
     const gastos = (shift.gastos || []).map(g => `<tr><td>${escapeHtml(g.fecha || '')}</td><td>Gasto</td><td>${escapeHtml(g.concepto || '')}</td><td>${money(g.monto, 'C$')}</td><td><button class="action" data-expense-ticket="${g.id || ''}">Ticket</button></td></tr>`).join('');
     const ingresos = (shift.ingresosManuales || []).map(g => `<tr><td>${escapeHtml(g.fecha || '')}</td><td>Ingreso extra</td><td>${escapeHtml(g.concepto || '')}</td><td>${money(g.monto, 'C$')}</td><td>-</td></tr>`).join('');
     movements.innerHTML = (pagos || gastos || ingresos) ? `<div class="report-table-wrap"><table class="table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Monto</th><th>Ticket</th></tr></thead><tbody>${pagos}${ingresos}${gastos}</tbody></table></div>` : '<div class="empty">No hay movimientos en este turno.</div>';
@@ -165,10 +186,13 @@ export async function openCashShift(event) {
     state.cajaTurnos = state.cajaTurnos.map(t => remoteOpen.some(r => r.id === t.id) ? { ...t, ignoradoPorRecuperacion: true } : t);
   }
   const apertura = Number(qs('#cash-opening-amount').value || 0);
+  const tipoCambio = Number(qs('#cash-exchange-rate')?.value || state.config?.tipoCambio || 36.5);
   await saveExchangeRate();
-  await addDoc(cajaTurnosRef, { estado: 'abierto', fecha: todayISO(), apertura, tipoCambio: Number(qs('#cash-exchange-rate')?.value || state.config?.tipoCambio || 36.5), gastos: [], ingresosManuales: [], createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  const newShift = { estado: 'abierto', fecha: todayISO(), apertura, tipoCambio, gastos: [], ingresosManuales: [], createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+  const ref = await addDoc(cajaTurnosRef, newShift);
+  upsertLocalShift({ id: ref.id, ...newShift, createdAt: { seconds: Math.floor(Date.now() / 1000) } });
   qs('#cash-opening-amount').value = '0';
-  toast('Caja abierta.');
+  toast('Caja abierta. Ya puedes registrar ventas, gastos y cerrar turno.');
 }
 
 export async function addCashExpense(event) {
@@ -180,8 +204,9 @@ export async function addCashExpense(event) {
   if (!concepto || monto <= 0) return toast('Ingresa concepto y monto válido.');
   const gasto = { id: crypto.randomUUID(), concepto, monto, fecha: todayISO() };
   await updateDoc(doc(db, 'cajaTurnos', shift.id), { gastos: arrayUnion(gasto), updatedAt: serverTimestamp() });
+  upsertLocalShift({ ...shift, gastos: [...(shift.gastos || []), gasto] });
   qs('#cash-expense-form').reset();
-  toast('Gasto registrado.');
+  toast('Gasto registrado. Disminuye el efectivo esperado del turno.');
   printExpenseTicket(gasto.id, gasto);
 }
 
@@ -192,9 +217,11 @@ export async function addManualIncome(event) {
   const concepto = qs('#cash-income-concept').value.trim();
   const monto = Number(qs('#cash-income-amount').value || 0);
   if (!concepto || monto <= 0) return toast('Ingresa concepto y monto válido.');
-  await updateDoc(doc(db, 'cajaTurnos', shift.id), { ingresosManuales: arrayUnion({ id: crypto.randomUUID(), concepto, monto, fecha: todayISO() }), updatedAt: serverTimestamp() });
+  const ingreso = { id: crypto.randomUUID(), concepto, monto, fecha: todayISO() };
+  await updateDoc(doc(db, 'cajaTurnos', shift.id), { ingresosManuales: arrayUnion(ingreso), updatedAt: serverTimestamp() });
+  upsertLocalShift({ ...shift, ingresosManuales: [...(shift.ingresosManuales || []), ingreso] });
   qs('#cash-income-form').reset();
-  toast('Ingreso extra registrado.');
+  toast('Ingreso extra registrado. Aumenta el efectivo esperado del turno.');
 }
 
 export function closeCashShift() {
@@ -235,6 +262,7 @@ export async function confirmCloseCashShift(event) {
     closedAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
+  upsertLocalShift({ ...shift, estado: 'cerrado', cierre: counted.total, conteo: collectDenominations(), dolaresContados: counted.usd, tipoCambioCierre: counted.tc, diferencia, totales: totals });
   closeDialog('#cash-close-dialog');
   toast(`Caja cerrada. Diferencia: ${money(diferencia, 'C$')}`);
 }
@@ -245,6 +273,12 @@ function mergeCajaTurnos(current = [], fetched = []) {
   fetched.forEach(t => map.set(t.id, { ...(map.get(t.id) || {}), ...t }));
   return Array.from(map.values());
 }
+
+function upsertLocalShift(shift) {
+  state.cajaTurnos = mergeCajaTurnos(state.cajaTurnos, [shift]);
+  renderCaja();
+}
+
 
 async function persistIgnoredShiftIds(ids = []) {
   const unique = Array.from(new Set([...(ignoredShiftIds()), ...ids.filter(Boolean)]));

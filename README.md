@@ -81,3 +81,11 @@ Esta versión mejora la recuperación de caja: el botón **Cerrar turno abierto 
 - La recuperación guarda los turnos ignorados también en el navegador, no solo en Firebase, para evitar que el sistema se vuelva a trabar si el documento viejo no se pudo modificar.
 - En Cotizaciones se puede agregar un cliente nuevo desde el mismo formulario.
 - En Configuración se agregó una opción peligrosa para borrar datos de prueba. Requiere escribir `BORRAR TODO`.
+
+## Actualización: productos manuales y métodos de pago
+
+- En pedidos y cotizaciones ahora cada línea puede ser **Inventario** o **Manual**.
+- Las líneas manuales sirven para servicios, trabajos especiales o productos que no se controlan en stock.
+- Las líneas manuales no afectan el kardex ni descuentan inventario.
+- Los cobros ahora permiten método de pago: **efectivo**, **tarjeta** o **transferencia**.
+- Caja separa tarjeta y transferencia del efectivo esperado: el cierre de billetes solo cuadra el dinero físico.

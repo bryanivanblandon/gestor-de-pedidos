@@ -113,31 +113,62 @@ function loadOrderForEdit(orderId) {
   qs('#order-discount').value = Number(p.descuentoValor ?? p.descuento_valor ?? p.descuento ?? 0);
   qs('#order-initial-payment').value = Number(p.total_pagado || 0);
   qs('#items-container').innerHTML = '';
-  (p.items?.length ? p.items : [{ cantidad: 1, descripcion: p.descripcion || '', precio: p.monto_total || 0 }]).forEach(i => addItemRow(i.cantidad, i.descripcion, i.precio, i.productoId || '', i.codigo || '', i.tipoVenta || 'unidad', i.ancho || 0, i.alto || 0));
+  (p.items?.length ? p.items : [{ cantidad: 1, descripcion: p.descripcion || '', precio: p.monto_total || 0 }]).forEach(i => addItemRow(i.cantidad, i.descripcion, i.precio, i.productoId || '', i.codigo || '', i.tipoVenta || 'unidad', i.ancho || 0, i.alto || 0, !!i.manual));
 }
 
-export function addItemRow(cantidad = 1, descripcion = '', precio = '', productoId = '', codigo = '', tipoVenta = 'unidad', ancho = 0, alto = 0) {
+export function addItemRow(cantidad = 1, descripcion = '', precio = '', productoId = '', codigo = '', tipoVenta = 'unidad', ancho = 0, alto = 0, manual = false) {
   const product = productoId ? state.productos.find(p => p.id === productoId) : null;
+  const isManual = manual || (!productoId && descripcion);
   const row = document.createElement('div');
   row.className = 'item-row pos-item-row';
   row.dataset.productId = productoId || '';
   row.dataset.productCode = codigo || product?.codigo || '';
   row.dataset.tipoVenta = tipoVenta || product?.tipoVenta || 'unidad';
+  row.dataset.manual = isManual ? 'true' : 'false';
   row.innerHTML = `
+    <select class="item-kind" aria-label="Tipo de línea"><option value="inventario" ${!isManual ? 'selected' : ''}>Inventario</option><option value="manual" ${isManual ? 'selected' : ''}>Manual</option></select>
     <input class="item-qty" type="number" min="1" step="1" value="${Number(cantidad || 1)}" aria-label="Cantidad" />
     <input class="item-product-search" list="product-options" value="${escapeHtml(product ? optionLabel(product) : '')}" placeholder="Buscar inventario por código o nombre" aria-label="Buscar producto" />
-    <input class="item-desc" value="${escapeHtml(descripcion || product?.nombre || '')}" placeholder="Se llena al seleccionar producto" aria-label="Producto" readonly />
+    <input class="item-desc" value="${escapeHtml(descripcion || product?.nombre || '')}" placeholder="Descripción del producto o servicio" aria-label="Producto" ${isManual ? '' : 'readonly'} />
     <input class="item-width area-input" type="number" min="0" step="0.01" value="${Number(ancho || 0)}" placeholder="Ancho cm" aria-label="Ancho cm" />
     <input class="item-height area-input" type="number" min="0" step="0.01" value="${Number(alto || 0)}" placeholder="Alto cm" aria-label="Alto cm" />
-    <input class="item-price" type="number" min="0" step="0.0001" value="${product ? (precio ?? product?.precio ?? '') : ''}" placeholder="Precio" aria-label="Precio" ${product ? '' : 'disabled'} />
+    <input class="item-price" type="number" min="0" step="0.0001" value="${product ? (precio ?? product?.precio ?? '') : (isManual ? Number(precio || 0) : '')}" placeholder="Precio" aria-label="Precio" ${product || isManual ? '' : 'disabled'} />
     <span class="line-total">0.00</span>
     <button type="button" class="remove-item" title="Eliminar fila">×</button>`;
   qs('#items-container').appendChild(row);
+  row.querySelector('.item-kind').addEventListener('change', () => toggleRowMode(row));
   row.querySelector('.item-product-search').addEventListener('change', () => applyProductToRow(row));
   row.querySelector('.item-product-search').addEventListener('blur', () => applyProductToRow(row));
-  row.querySelectorAll('input').forEach(input => input.addEventListener('input', recalcOrderForm));
+  row.querySelectorAll('input, select').forEach(input => input.addEventListener('input', recalcOrderForm));
   row.querySelector('.remove-item').addEventListener('click', () => { row.remove(); recalcOrderForm(); });
+  toggleRowMode(row, true);
   updateAreaVisibility(row);
+  recalcOrderForm();
+}
+
+function toggleRowMode(row, keepValues = false) {
+  const manual = row.querySelector('.item-kind')?.value === 'manual';
+  row.dataset.manual = manual ? 'true' : 'false';
+  const search = row.querySelector('.item-product-search');
+  const desc = row.querySelector('.item-desc');
+  const price = row.querySelector('.item-price');
+  if (manual) {
+    row.dataset.productId = '';
+    row.dataset.productCode = '';
+    search.value = '';
+    search.disabled = true;
+    desc.readOnly = false;
+    price.disabled = false;
+    if (!keepValues && !desc.value) desc.value = '';
+  } else {
+    search.disabled = false;
+    desc.readOnly = true;
+    if (!row.dataset.productId) {
+      desc.value = '';
+      price.value = '';
+      price.disabled = true;
+    }
+  }
   recalcOrderForm();
 }
 
@@ -146,6 +177,7 @@ function updateAreaVisibility(row) {
 }
 
 function applyProductToRow(row) {
+  if (row.dataset.manual === 'true') return;
   const search = row.querySelector('.item-product-search');
   const product = findProductByInput(search.value);
   if (!product) {
@@ -162,8 +194,11 @@ function applyProductToRow(row) {
   row.dataset.productId = product.id;
   row.dataset.productCode = product.codigo || '';
   row.dataset.tipoVenta = product.tipoVenta || 'unidad';
+  row.dataset.manual = 'false';
+  row.querySelector('.item-kind').value = 'inventario';
   row.querySelector('.item-product-search').value = optionLabel(product);
   row.querySelector('.item-desc').value = product.nombre || '';
+  row.querySelector('.item-desc').readOnly = true;
   row.querySelector('.item-price').value = Number(product.precio || 0);
   row.querySelector('.item-price').disabled = false;
   updateAreaVisibility(row);
@@ -192,7 +227,8 @@ function getItemsFromForm() {
     ancho: Number(row.querySelector('.item-width')?.value || 0),
     alto: Number(row.querySelector('.item-height')?.value || 0),
     precio: Number(row.querySelector('.item-price').value || 0),
-  })).filter(item => item.cantidad > 0 && item.descripcion && item.productoId);
+    manual: row.dataset.manual === 'true',
+  })).filter(item => item.cantidad > 0 && item.descripcion && (item.productoId || item.manual));
 }
 
 function getFormTotals() {
@@ -216,7 +252,7 @@ export async function saveOrder(event) {
   const client = state.clientes.find(c => c.id === qs('#order-client').value);
   const totals = getFormTotals();
   if (!client) return toast('Selecciona un cliente.');
-  if (!totals.items.length) return toast('Selecciona productos del inventario antes de poner precio o guardar.');
+  if (!totals.items.length) return toast('Agrega al menos un producto de inventario o una línea manual con descripción y precio.');
   if (totals.abono > 0 && !getActiveShift()) return toast('Para recibir abono inicial primero debes abrir caja.');
 
   const payload = {
@@ -245,7 +281,8 @@ export async function saveOrder(event) {
     toast('Pedido actualizado.');
   } else {
     const shift = getActiveShift();
-    const pagos = totals.abono > 0 ? [{ monto: totals.abono, fecha: todayISO(), nota: 'Abono inicial', turnoId: shift?.id || '' }] : [];
+    const metodoPagoInicial = qs('#order-initial-payment-method')?.value || 'efectivo';
+    const pagos = totals.abono > 0 ? [{ monto: totals.abono, fecha: todayISO(), nota: 'Abono inicial', metodo: metodoPagoInicial, turnoId: shift?.id || '' }] : [];
     const ref = await addDoc(pedidosRef, { ...payload, pagos, turnoId: shift?.id || '', createdAt: serverTimestamp() });
     await adjustInventoryForOrder(null, payload);
     toast('Pedido guardado.');
@@ -280,6 +317,7 @@ export function openPaymentForm(orderId) {
   qs('#payment-order-id').value = orderId;
   qs('#payment-info').innerHTML = `<strong>${escapeHtml(p.cliente || '')}</strong><br>Pedido: ${escapeHtml(shortOrderDescription(p))}<br>Total: ${money(c.total, p.moneda || 'C$')} · Pagado: ${money(c.totalPagado, p.moneda || 'C$')} · Saldo: <strong>${money(c.saldo, p.moneda || 'C$')}</strong>`;
   qs('#payment-amount').value = '';
+  qs('#payment-method').value = 'efectivo';
   qs('#payment-amount').max = c.saldo;
   openDialog('#payment-dialog');
 }
@@ -289,6 +327,7 @@ export async function savePayment(event) {
   const id = qs('#payment-order-id').value;
   const p = state.pedidos.find(x => x.id === id);
   const amount = Number(qs('#payment-amount').value || 0);
+  const metodo = qs('#payment-method')?.value || 'efectivo';
   if (!p || amount <= 0) return toast('Ingresa un monto válido.');
   if (!getActiveShift()) return toast('Para cobrar o abonar primero debes abrir caja.');
   const c = calcPedido(p);
@@ -296,7 +335,7 @@ export async function savePayment(event) {
 
   await updateDoc(doc(db, 'pedidos', id), {
     total_pagado: increment(amount),
-    pagos: arrayUnion({ monto: amount, fecha: todayISO(), nota: 'Abono registrado', turnoId: getActiveShift()?.id || '' }),
+    pagos: arrayUnion({ monto: amount, fecha: todayISO(), nota: 'Abono registrado', metodo, turnoId: getActiveShift()?.id || '' }),
     updatedAt: serverTimestamp()
   });
   closeDialog('#payment-dialog');
@@ -335,7 +374,7 @@ export function printOrderTicket(orderId) {
   if (!p) return toast('No encontré el pedido para imprimir.');
   const c = calcPedido(p);
   const currency = p.moneda || 'C$';
-  const rows = (p.items || []).map(item => `<tr><td>${Number(item.cantidad || 0)}</td><td>${escapeHtml(item.descripcion || '')}${item.tipoVenta === 'area_cm2' ? `<br><small>${Number(item.ancho || 0)}×${Number(item.alto || 0)} cm</small>` : ''}</td><td class="right">${money(lineItemTotal(item), currency)}</td></tr>`).join('');
+  const rows = (p.items || []).map(item => `<tr><td>${Number(item.cantidad || 0)}</td><td>${escapeHtml(item.descripcion || '')}${item.manual ? '<br><small>Manual / servicio</small>' : ''}${item.tipoVenta === 'area_cm2' ? `<br><small>${Number(item.ancho || 0)}×${Number(item.alto || 0)} cm</small>` : ''}</td><td class="right">${money(lineItemTotal(item), currency)}</td></tr>`).join('');
   openTicketWindow(`
     <div class="ticket-center"><strong>${BUSINESS_NAME}</strong><br><small>Ticket de pedido / factura</small></div>
     <hr>

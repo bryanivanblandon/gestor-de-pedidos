@@ -71,47 +71,72 @@ function loadQuoteForEdit(id) {
 
 export function addQuoteItemRow(item = {}) {
   const product = item.productoId ? state.productos.find(p => p.id === item.productoId) : null;
+  const isManual = !!item.manual || (!item.productoId && item.descripcion);
   const row = document.createElement('div');
   row.className = 'item-row pos-item-row';
   row.dataset.productId = item.productoId || '';
   row.dataset.productCode = item.codigo || product?.codigo || '';
   row.dataset.tipoVenta = item.tipoVenta || product?.tipoVenta || 'unidad';
+  row.dataset.manual = isManual ? 'true' : 'false';
   row.innerHTML = `
+    <select class="item-kind"><option value="inventario" ${!isManual ? 'selected' : ''}>Inventario</option><option value="manual" ${isManual ? 'selected' : ''}>Manual</option></select>
     <input class="item-qty" type="number" min="1" step="1" value="${Number(item.cantidad || 1)}" aria-label="Cantidad" />
     <input class="item-product-search" list="product-options" value="${escapeHtml(product ? optionLabel(product) : '')}" placeholder="Buscar inventario" />
-    <input class="item-desc" value="${escapeHtml(item.descripcion || product?.nombre || '')}" placeholder="Se llena al seleccionar producto" readonly />
+    <input class="item-desc" value="${escapeHtml(item.descripcion || product?.nombre || '')}" placeholder="Descripción del producto o servicio" ${isManual ? '' : 'readonly'} />
     <input class="item-width area-input" type="number" min="0" step="0.01" value="${Number(item.ancho || 0)}" placeholder="Ancho cm" />
     <input class="item-height area-input" type="number" min="0" step="0.01" value="${Number(item.alto || 0)}" placeholder="Alto cm" />
-    <input class="item-price" type="number" min="0" step="0.0001" value="${product ? (item.precio ?? product?.precio ?? '') : ''}" placeholder="Precio" ${product ? '' : 'disabled'} />
+    <input class="item-price" type="number" min="0" step="0.0001" value="${product ? (item.precio ?? product?.precio ?? '') : (isManual ? Number(item.precio || 0) : '')}" placeholder="Precio" ${product || isManual ? '' : 'disabled'} />
     <span class="line-total">0.00</span>
     <button type="button" class="remove-item">×</button>`;
   qs('#quote-items-container').appendChild(row);
+  row.querySelector('.item-kind').addEventListener('change', () => toggleQuoteRowMode(row));
   row.querySelector('.item-product-search').addEventListener('change', () => applyProduct(row));
   row.querySelector('.item-product-search').addEventListener('blur', () => applyProduct(row));
-  row.querySelectorAll('input').forEach(i => i.addEventListener('input', recalcQuoteForm));
+  row.querySelectorAll('input, select').forEach(i => i.addEventListener('input', recalcQuoteForm));
   row.querySelector('.remove-item').addEventListener('click', () => { row.remove(); recalcQuoteForm(); });
+  toggleQuoteRowMode(row, true);
   updateAreaVisibility(row);
   recalcQuoteForm();
 }
 
+function toggleQuoteRowMode(row, keepValues = false) {
+  const manual = row.querySelector('.item-kind')?.value === 'manual';
+  row.dataset.manual = manual ? 'true' : 'false';
+  const search = row.querySelector('.item-product-search');
+  const desc = row.querySelector('.item-desc');
+  const price = row.querySelector('.item-price');
+  if (manual) {
+    row.dataset.productId = ''; row.dataset.productCode = '';
+    search.value = ''; search.disabled = true;
+    desc.readOnly = false; price.disabled = false;
+  } else {
+    search.disabled = false; desc.readOnly = true;
+    if (!row.dataset.productId) { desc.value = ''; price.value = ''; price.disabled = true; }
+  }
+  recalcQuoteForm();
+}
+
 function applyProduct(row) {
+  if (row.dataset.manual === 'true') return;
   const product = findProductByInput(row.querySelector('.item-product-search').value);
   if (!product) { row.dataset.productId = ''; row.dataset.productCode = ''; row.dataset.tipoVenta = 'unidad'; row.querySelector('.item-desc').value = ''; row.querySelector('.item-price').value = ''; row.querySelector('.item-price').disabled = true; updateAreaVisibility(row); recalcQuoteForm(); return; }
-  row.dataset.productId = product.id; row.dataset.productCode = product.codigo || ''; row.dataset.tipoVenta = product.tipoVenta || 'unidad';
+  row.dataset.productId = product.id; row.dataset.productCode = product.codigo || ''; row.dataset.tipoVenta = product.tipoVenta || 'unidad'; row.dataset.manual = 'false';
+  row.querySelector('.item-kind').value = 'inventario';
   row.querySelector('.item-product-search').value = optionLabel(product);
   row.querySelector('.item-desc').value = product.nombre || '';
+  row.querySelector('.item-desc').readOnly = true;
   row.querySelector('.item-price').value = Number(product.precio || 0);
   row.querySelector('.item-price').disabled = false;
   updateAreaVisibility(row); recalcQuoteForm();
 }
 function updateAreaVisibility(row) { row.classList.toggle('area-mode', row.dataset.tipoVenta === 'area_cm2'); }
-function getItems() { return Array.from(document.querySelectorAll('#quote-items-container .item-row')).map(row => ({ cantidad:Number(row.querySelector('.item-qty').value||0), productoId: row.dataset.productId || '', codigo: row.dataset.productCode || '', tipoVenta: row.dataset.tipoVenta || 'unidad', descripcion: row.querySelector('.item-desc').value.trim(), ancho:Number(row.querySelector('.item-width').value||0), alto:Number(row.querySelector('.item-height').value||0), precio:Number(row.querySelector('.item-price').value||0) })).filter(i => i.cantidad > 0 && i.descripcion && i.productoId); }
+function getItems() { return Array.from(document.querySelectorAll('#quote-items-container .item-row')).map(row => ({ cantidad:Number(row.querySelector('.item-qty').value||0), productoId: row.dataset.productId || '', codigo: row.dataset.productCode || '', tipoVenta: row.dataset.tipoVenta || 'unidad', descripcion: row.querySelector('.item-desc').value.trim(), ancho:Number(row.querySelector('.item-width').value||0), alto:Number(row.querySelector('.item-height').value||0), precio:Number(row.querySelector('.item-price').value||0), manual: row.dataset.manual === 'true' })).filter(i => i.cantidad > 0 && i.descripcion && (i.productoId || i.manual)); }
 function totals() { const items=getItems(); const subtotal=items.reduce((s,i)=>s+lineItemTotal(i),0); const tipo=qs('#quote-discount-type').value; const valor=Math.max(0,Number(qs('#quote-discount').value||0)); const descuento=tipo==='porcentaje'?Math.min(subtotal, subtotal*Math.min(valor,100)/100):Math.min(subtotal, valor); return {items, subtotal, descuentoTipo:tipo, descuentoValor:valor, descuento, total:Math.max(0,subtotal-descuento)}; }
 export function recalcQuoteForm() { const t=totals(); qs('#quote-subtotal').textContent=t.subtotal.toFixed(2); qs('#quote-total').textContent=t.total.toFixed(2); document.querySelectorAll('#quote-items-container .item-row').forEach(row=>{ const item={cantidad:Number(row.querySelector('.item-qty').value||0), tipoVenta:row.dataset.tipoVenta||'unidad', ancho:Number(row.querySelector('.item-width').value||0), alto:Number(row.querySelector('.item-height').value||0), precio:Number(row.querySelector('.item-price').value||0)}; row.querySelector('.line-total').textContent=lineItemTotal(item).toFixed(2); }); }
 
 export async function saveQuote(event) {
   event.preventDefault(); const id=qs('#quote-doc-id').value; const client=state.clientes.find(c=>c.id===qs('#quote-client').value); const t=totals();
-  if(!client) return toast('Selecciona un cliente.'); if(!t.items.length) return toast('Selecciona productos del inventario antes de poner precio o guardar.');
+  if(!client) return toast('Selecciona un cliente.'); if(!t.items.length) return toast('Agrega al menos un producto de inventario o una línea manual con descripción y precio.');
   const payload={ clienteId:client.id, cliente:client.nombre, telefono:client.telefono||'', moneda:qs('#quote-currency').value, validaHasta:qs('#quote-valid-until').value, estado:qs('#quote-status').value, items:t.items, subtotal:t.subtotal, descuento:t.descuento, descuentoTipo:t.descuentoTipo, descuentoValor:t.descuentoValor, monto_total:t.total, notas:qs('#quote-notes').value.trim(), updatedAt:serverTimestamp() };
   if(id) { await updateDoc(doc(db,'cotizaciones',id), payload); toast('Cotización actualizada.'); }
   else { await addDoc(cotizacionesRef,{...payload, createdAt:serverTimestamp()}); toast('Cotización guardada.'); }
@@ -137,10 +162,16 @@ export async function convertQuoteToOrder(id) {
   const abono = Number(initial || 0);
   if (abono < 0 || abono > c.total) return toast('El abono debe ser entre 0 y el total de la cotización.');
   if (abono > 0 && !getActiveShift()) return toast('Para recibir abono primero debes abrir caja.');
+  let metodo = 'efectivo';
+  if (abono > 0) {
+    const methodInput = prompt('Método de pago del abono: efectivo, tarjeta o transferencia', 'efectivo');
+    if (methodInput === null) return;
+    metodo = ['efectivo', 'tarjeta', 'transferencia'].includes(String(methodInput).toLowerCase().trim()) ? String(methodInput).toLowerCase().trim() : 'efectivo';
+  }
   const ok = confirm('¿Convertir esta cotización en pedido/factura?');
   if (!ok) return;
   const shift = getActiveShift();
-  const pagos = abono > 0 ? [{ monto: abono, fecha: todayISO(), nota: 'Abono al convertir cotización', turnoId: shift?.id || '' }] : [];
+  const pagos = abono > 0 ? [{ monto: abono, fecha: todayISO(), nota: 'Abono al convertir cotización', metodo, turnoId: shift?.id || '' }] : [];
   const payload = { clienteId:q.clienteId, cliente:q.cliente, telefono:q.telefono||'', moneda:q.moneda||'C$', fecha_entrega:todayISO(), descripcion:shortOrderDescription(q), estado:'Pendiente', items:q.items||[], subtotal:c.subtotal, descuento:c.descuento, descuentoTipo:q.descuentoTipo||'monto', descuentoValor:q.descuentoValor||0, monto_total:c.total, total_pagado:abono, saldo:Math.max(0, c.total - abono), pagos, cotizacionId:id, turnoId: shift?.id || '', createdAt:serverTimestamp(), updatedAt:serverTimestamp() };
   const ref = await addDoc(pedidosRef, payload);
   await adjustInventoryForOrder(null, payload);
