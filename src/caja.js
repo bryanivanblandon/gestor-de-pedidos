@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { cajaTurnosRef, configRef, addDoc, doc, updateDoc, onSnapshot, serverTimestamp, db, arrayUnion, setDoc } from './firebase.js';
+import { cajaTurnosRef, configRef, addDoc, doc, updateDoc, onSnapshot, serverTimestamp, db, arrayUnion, setDoc, getDocs } from './firebase.js';
 import { qs, setEmpty, toast, openDialog, closeDialog } from './ui.js';
 import { calcPedido, escapeHtml, money, todayISO, shortOrderDescription, openTicketWindow, BUSINESS_NAME } from './utils.js';
 
@@ -23,10 +23,32 @@ function shiftSortValue(t = {}) {
   return Number.isNaN(parsed) ? 0 : parsed / 1000;
 }
 
+function normalizeShiftStatus(value = '') {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isOpenShift(t = {}) {
+  const status = normalizeShiftStatus(t.estado);
+  return status === 'abierto' || status === 'abierta' || status === 'activo' || status === 'activa' || status === 'open';
+}
+
+function isClosedShift(t = {}) {
+  const status = normalizeShiftStatus(t.estado);
+  return status === 'cerrado' || status === 'cerrada' || status === 'closed';
+}
+
 export function getActiveShift() {
   return state.cajaTurnos
-    .filter(t => t.estado === 'abierto')
+    .filter(isOpenShift)
     .sort((a, b) => shiftSortValue(b) - shiftSortValue(a))[0] || null;
+}
+
+async function fetchOpenShiftsFromFirestore() {
+  const snap = await getDocs(cajaTurnosRef);
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(isOpenShift)
+    .sort((a, b) => shiftSortValue(b) - shiftSortValue(a));
 }
 
 export function getPaymentsForShift(shift = getActiveShift()) {
@@ -65,7 +87,7 @@ export function renderCaja() {
   const summary = qs('#cash-summary');
   const tcInput = qs('#cash-exchange-rate');
   if (tcInput && document.activeElement !== tcInput) tcInput.value = Number(state.config?.tipoCambio || 36.5);
-  const openCount = state.cajaTurnos.filter(t => t.estado === 'abierto').length;
+  const openCount = state.cajaTurnos.filter(isOpenShift).length;
   if (!status) return;
 
   if (!shift) {
@@ -112,7 +134,14 @@ export async function saveExchangeRate() {
 
 export async function openCashShift(event) {
   event.preventDefault();
-  if (getActiveShift()) return toast('Ya hay una caja abierta.');
+  const localShift = getActiveShift();
+  if (localShift) return toast('Ya hay una caja abierta.');
+  const remoteOpen = await fetchOpenShiftsFromFirestore();
+  if (remoteOpen.length) {
+    state.cajaTurnos = mergeCajaTurnos(state.cajaTurnos, remoteOpen);
+    renderCaja();
+    return toast('Hay un turno abierto en Firebase. Ciérralo desde Recuperar caja trabada antes de abrir otro.');
+  }
   const apertura = Number(qs('#cash-opening-amount').value || 0);
   await saveExchangeRate();
   await addDoc(cajaTurnosRef, { estado: 'abierto', fecha: todayISO(), apertura, tipoCambio: Number(qs('#cash-exchange-rate')?.value || state.config?.tipoCambio || 36.5), gastos: [], ingresosManuales: [], createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
@@ -189,23 +218,54 @@ export async function confirmCloseCashShift(event) {
 }
 
 
+function mergeCajaTurnos(current = [], fetched = []) {
+  const map = new Map(current.map(t => [t.id, t]));
+  fetched.forEach(t => map.set(t.id, { ...(map.get(t.id) || {}), ...t }));
+  return Array.from(map.values());
+}
+
 export async function forceCloseActiveShift() {
-  const shift = getActiveShift();
-  if (!shift) return toast('No hay turno abierto para cerrar.');
-  const ok = confirm('Esto cerrará administrativamente el turno abierto sin conteo de billetes. Úsalo solo para recuperar una caja trabada. ¿Continuar?');
+  const localOpen = state.cajaTurnos.filter(isOpenShift);
+  let openShifts = localOpen;
+
+  try {
+    const remoteOpen = await fetchOpenShiftsFromFirestore();
+    openShifts = mergeCajaTurnos(localOpen, remoteOpen).filter(isOpenShift);
+  } catch (error) {
+    console.error(error);
+    if (!localOpen.length) return toast('No pude leer los turnos desde Firebase. Revisa conexión, sesión y reglas.');
+  }
+
+  if (!openShifts.length) {
+    state.cajaTurnos = state.cajaTurnos.map(t => isClosedShift(t) ? t : { ...t, estado: normalizeShiftStatus(t.estado) || 'cerrado' });
+    renderCaja();
+    return toast('No encontré turnos abiertos en Firebase. La vista fue refrescada.');
+  }
+
+  const ok = confirm(`Se encontraron ${openShifts.length} turno(s) abierto(s). Esto los cerrará administrativamente sin conteo de billetes. ¿Continuar?`);
   if (!ok) return;
-  const totals = shiftTotals(shift);
-  await updateDoc(doc(db, 'cajaTurnos', shift.id), {
-    estado: 'cerrado',
-    cierre: totals.efectivoEsperado,
-    diferencia: 0,
-    cierreAdministrativo: true,
-    notaCierre: 'Cierre administrativo por recuperación de turno trabado',
-    totales: totals,
-    closedAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-  toast('Turno cerrado administrativamente. Ya puedes abrir una caja nueva.');
+
+  try {
+    await Promise.all(openShifts.map(shift => {
+      const totals = shiftTotals(shift);
+      return updateDoc(doc(db, 'cajaTurnos', shift.id), {
+        estado: 'cerrado',
+        cierre: totals.efectivoEsperado,
+        diferencia: 0,
+        cierreAdministrativo: true,
+        notaCierre: 'Cierre administrativo por recuperación de turno trabado',
+        totales: totals,
+        closedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    }));
+    state.cajaTurnos = state.cajaTurnos.map(t => openShifts.some(s => s.id === t.id) ? { ...t, estado: 'cerrado', cierreAdministrativo: true } : t);
+    renderCaja();
+    toast('Turno(s) cerrado(s) administrativamente. Ya puedes abrir una caja nueva.');
+  } catch (error) {
+    console.error(error);
+    toast('No pude cerrar la caja. Revisa que hayas iniciado sesión principal y publicado firestore.rules.');
+  }
 }
 
 function collectDenominations() {

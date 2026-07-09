@@ -64,3 +64,7 @@ No requiere build. Sube todo el contenido del proyecto y Vercel lo publicará co
 - Una cotización convertida queda marcada como `Convertida` y no puede convertirse de nuevo.
 - Al convertir una cotización a pedido/factura, el sistema pregunta si hay abono inicial.
 - Caja incluye recuperación administrativa para turnos trabados, visible solo para administrador.
+
+## Corrección de caja trabada
+
+Esta versión mejora la recuperación de caja: el botón **Cerrar turno abierto administrativamente** ya no depende solo del estado cargado en pantalla. Ahora consulta directamente la colección `cajaTurnos` en Firebase, detecta cualquier turno con estado abierto/abierta/activo/open y lo cierra administrativamente. Si había más de un turno abierto por error, los cierra todos para permitir abrir una caja nueva.

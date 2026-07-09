@@ -10,7 +10,8 @@ import {
   serverTimestamp,
   arrayUnion,
   increment,
-  setDoc
+  setDoc,
+  getDocs
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import {
   getAuth,
@@ -52,6 +53,7 @@ export {
   arrayUnion,
   increment,
   setDoc,
+  getDocs,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
