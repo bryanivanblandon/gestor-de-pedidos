@@ -1,6 +1,7 @@
 export const state = {
   clientes: [],
   pedidos: [],
+  cajaTurnos: [],
   currentView: 'dashboard',
   orderFilter: 'activos',
   orderSearch: '',
@@ -8,5 +9,10 @@ export const state = {
   nextClientId: 1,
 };
 
-export const ESTADOS = ['Pendiente', 'En diseño', 'En producción', 'Listo', 'Entregado', 'Anulado'];
-export const ESTADOS_ACTIVOS = ['Pendiente', 'En diseño', 'En producción', 'Listo'];
+export const ESTADOS = ['Activo', 'Pendiente', 'Entregado', 'Anulado'];
+export const ESTADOS_ACTIVOS = ['Activo', 'Pendiente'];
+export const ESTADOS_LEGACY_MAP = {
+  'En diseño': 'Activo',
+  'En producción': 'Activo',
+  'Listo': 'Activo',
+};

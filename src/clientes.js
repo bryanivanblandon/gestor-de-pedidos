@@ -5,7 +5,7 @@ import { escapeHtml, getClienteName } from './utils.js';
 import { renderAll } from './render.js';
 
 export function listenClientes() {
-  onSnapshot(clientesRef, snap => {
+  return onSnapshot(clientesRef, snap => {
     state.clientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const maxId = state.clientes.reduce((max, c) => Math.max(max, Number(c.clienteId || 0)), 0);
     state.nextClientId = maxId + 1;
@@ -91,7 +91,7 @@ export function showClientHistory(id) {
     body.innerHTML = '<div class="empty">Este cliente todavía no tiene pedidos.</div>';
   } else {
     body.innerHTML = `<table class="table"><thead><tr><th>Entrega</th><th>Pedido</th><th>Estado</th><th>Total</th></tr></thead><tbody>${pedidos.map(p => `
-      <tr><td>${escapeHtml(p.fecha_entrega || '')}</td><td>${escapeHtml(p.descripcion || '')}</td><td>${escapeHtml(p.estado || 'Pendiente')}</td><td>${escapeHtml(p.moneda || 'C$')}${Number(p.monto_total || 0).toFixed(2)}</td></tr>`).join('')}</tbody></table>`;
+      <tr><td>${escapeHtml(p.fecha_entrega || '')}</td><td>${escapeHtml(shortOrderDescription(p))}</td><td>${escapeHtml(normalizeEstado(p.estado || 'Pendiente'))}</td><td>${escapeHtml(p.moneda || 'C$')}${Number(p.monto_total || 0).toFixed(2)}</td></tr>`).join('')}</tbody></table>`;
   }
   qs('#detail-dialog').showModal();
 }

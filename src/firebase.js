@@ -13,8 +13,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import {
   getAuth,
-  signInAnonymously,
-  onAuthStateChanged
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 
 export const firebaseConfig = {
@@ -31,6 +35,7 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const clientesRef = collection(db, 'clientes');
 export const pedidosRef = collection(db, 'pedidos');
+export const cajaTurnosRef = collection(db, 'cajaTurnos');
 
 export {
   addDoc,
@@ -41,6 +46,10 @@ export {
   serverTimestamp,
   arrayUnion,
   increment,
-  signInAnonymously,
-  onAuthStateChanged
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence
 };

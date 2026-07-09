@@ -27,7 +27,7 @@ export function escapeHtml(value = '') {
 }
 
 export function statusClass(status = 'Pendiente') {
-  return String(status)
+  return normalizeEstado(status)
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -35,14 +35,30 @@ export function statusClass(status = 'Pendiente') {
     .replace(/\s+/g, '-');
 }
 
+export function normalizeEstado(status = 'Pendiente') {
+  const value = String(status || 'Pendiente');
+  if (['En diseño', 'En producción', 'Listo'].includes(value)) return 'Activo';
+  return value;
+}
+
+export function shortOrderDescription(pedido = {}) {
+  if (pedido.descripcion) return pedido.descripcion;
+  const items = Array.isArray(pedido.items) ? pedido.items : [];
+  if (!items.length) return 'Pedido sin detalle';
+  const first = items[0]?.descripcion || 'Producto';
+  return items.length > 1 ? `${first} + ${items.length - 1} más` : first;
+}
+
 export function calcPedido(pedido = {}) {
   const items = Array.isArray(pedido.items) ? pedido.items : [];
   const subtotal = items.reduce((sum, item) => sum + (Number(item.cantidad || 0) * Number(item.precio || 0)), 0);
-  const descuento = Math.max(0, Number(pedido.descuento || 0));
+  const descuentoTipo = pedido.descuentoTipo || pedido.tipo_descuento || 'monto';
+  const descuentoValor = Math.max(0, Number(pedido.descuentoValor ?? pedido.descuento_valor ?? pedido.descuento ?? 0));
+  const descuento = descuentoTipo === 'porcentaje' ? Math.min(subtotal, subtotal * (Math.min(descuentoValor, 100) / 100)) : Math.min(subtotal, descuentoValor);
   const total = Math.max(0, Number(pedido.monto_total ?? pedido.total ?? (subtotal - descuento)));
   const totalPagado = Math.max(0, Number(pedido.total_pagado ?? pedido.totalPagado ?? 0));
   const saldo = Math.max(0, total - totalPagado);
-  return { subtotal, descuento, total, totalPagado, saldo };
+  return { subtotal, descuento, descuentoTipo, descuentoValor, total, totalPagado, saldo };
 }
 
 export function byDeliveryDate(a, b) {

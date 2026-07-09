@@ -10,21 +10,42 @@
 <body>
   <div id="toast" class="toast" hidden></div>
 
-  <header class="app-header no-print">
-    <div>
-      <p class="eyebrow">Sistema de producción y cobranza</p>
+  <section id="login-view" class="login-screen">
+    <form id="login-form" class="login-card">
+      <p class="eyebrow">Acceso privado</p>
       <h1>Arca de la Nueva Alianza</h1>
+      <p class="login-copy">Ingresa con el correo autorizado para abrir el POS.</p>
+      <label>Correo electrónico
+        <input id="login-email" type="email" autocomplete="email" required placeholder="tu-correo@ejemplo.com" />
+      </label>
+      <label>Contraseña
+        <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" />
+      </label>
+      <button class="primary" type="submit">Entrar al sistema</button>
+      <button class="link-button login-link" id="reset-password" type="button">Olvidé mi contraseña</button>
+      <div id="login-error" class="login-error" hidden></div>
+    </form>
+  </section>
+
+  <header class="app-header no-print app-private" hidden>
+    <div>
+      <p class="eyebrow">Sistema POS, caja y producción</p>
+      <h1>Arca de la Nueva Alianza</h1>
+      <p class="session-user" id="session-user"></p>
     </div>
-    <div class="status-pill" id="sync-status">Conectando…</div>
+    <div class="header-actions">
+      <div class="status-pill" id="sync-status">Conectando…</div>
+      <button class="ghost" id="logout-button" type="button">Cerrar sesión</button>
+    </div>
   </header>
 
-  <main class="app-shell">
+  <main class="app-shell app-private" hidden>
     <section id="view-dashboard" class="view active">
       <div class="hero-card">
         <div>
           <p class="eyebrow">Panel principal</p>
           <h2>Gestor de Pedidos</h2>
-          <p>Clientes, producción, abonos, saldos y reportes en un solo lugar.</p>
+          <p>Clientes, pedidos, caja, cobranza, producción y reportes en un solo lugar.</p>
         </div>
         <button class="primary" data-action="open-order-form">+ Nuevo pedido</button>
       </div>
@@ -35,6 +56,7 @@
         <button class="menu-card" data-view="clientes"><strong>Clientes</strong><span>Directorio e historial</span></button>
         <button class="menu-card" data-view="pedidos"><strong>Producción</strong><span>Órdenes y estados</span></button>
         <button class="menu-card" data-view="cobranza"><strong>Cobranza</strong><span>Saldos pendientes</span></button>
+        <button class="menu-card" data-view="caja"><strong>Caja</strong><span>Abrir, cobrar, gastos y cierre</span></button>
         <button class="menu-card" data-view="reportes"><strong>Reportes</strong><span>PDF y cierres</span></button>
       </div>
 
@@ -87,10 +109,8 @@
           <input class="search" id="order-search" placeholder="Buscar cliente o pedido..." />
           <div class="filters" id="order-filters">
             <button class="chip active" data-filter="activos">Activos</button>
+            <button class="chip" data-filter="Activo">Activo</button>
             <button class="chip" data-filter="Pendiente">Pendiente</button>
-            <button class="chip" data-filter="En diseño">En diseño</button>
-            <button class="chip" data-filter="En producción">En producción</button>
-            <button class="chip" data-filter="Listo">Listo</button>
             <button class="chip" data-filter="Entregado">Entregado</button>
             <button class="chip" data-filter="todos">Todos</button>
           </div>
@@ -111,6 +131,54 @@
         </div>
         <div class="summary-grid" id="debt-summary"></div>
         <div id="debt-list" class="card-list"></div>
+      </div>
+    </section>
+
+    <section id="view-caja" class="view">
+      <button class="back" data-view="dashboard">← Volver al menú</button>
+      <div class="panel">
+        <div class="panel-title wrap">
+          <div>
+            <h2>Caja POS</h2>
+            <p>Abre turno, cobra facturas, registra gastos y cierra la caja del día.</p>
+          </div>
+          <button class="primary" id="cash-close" type="button">Cerrar caja</button>
+        </div>
+        <div id="cash-status" class="cash-status"></div>
+        <div id="cash-open-panel">
+          <form id="cash-open-form" class="cash-open-form">
+            <label>Monto de apertura en caja C$<input id="cash-opening-amount" type="number" min="0" step="0.01" value="0" /></label>
+            <button class="primary" type="submit">Abrir turno</button>
+          </form>
+        </div>
+        <div id="cash-active-panel" hidden>
+          <div class="summary-grid report-summary" id="cash-summary"></div>
+          <div class="cash-grid">
+            <form id="cash-expense-form" class="form-stack mini-panel">
+              <h3>Registrar gasto</h3>
+              <label>Concepto<input id="cash-expense-concept" placeholder="Ej: delivery, material, combustible" /></label>
+              <label>Monto C$<input id="cash-expense-amount" type="number" min="0.01" step="0.01" /></label>
+              <button class="secondary" type="submit">Guardar gasto</button>
+            </form>
+            <form id="cash-income-form" class="form-stack mini-panel">
+              <h3>Ingreso extra</h3>
+              <label>Concepto<input id="cash-income-concept" placeholder="Ej: efectivo agregado a caja" /></label>
+              <label>Monto C$<input id="cash-income-amount" type="number" min="0.01" step="0.01" /></label>
+              <button class="secondary" type="submit">Guardar ingreso</button>
+            </form>
+          </div>
+          <h3>Movimientos del turno</h3>
+          <div id="cash-movements"></div>
+        </div>
+      </div>
+      <div class="panel report-preview-panel">
+        <div class="panel-title wrap">
+          <div>
+            <h3>Facturas pendientes por cobrar</h3>
+            <p>Desde aquí puedes cobrar pedidos pendientes y el abono queda reflejado en caja.</p>
+          </div>
+        </div>
+        <div id="cash-pending-list" class="card-list"></div>
       </div>
     </section>
 
@@ -153,10 +221,8 @@
               <option value="activos">Activos</option>
               <option value="no-anulados">No anulados</option>
               <option value="todos">Todos</option>
+              <option>Activo</option>
               <option>Pendiente</option>
-              <option>En diseño</option>
-              <option>En producción</option>
-              <option>Listo</option>
               <option>Entregado</option>
               <option>Anulado</option>
             </select>
@@ -222,16 +288,16 @@
         <label>Fecha de entrega<input id="order-delivery" type="date" required /></label>
         <label>Estado
           <select id="order-status">
-            <option>Pendiente</option><option>En diseño</option><option>En producción</option><option>Listo</option><option>Entregado</option><option>Anulado</option>
+            <option>Pendiente</option><option>Activo</option><option>Entregado</option><option>Anulado</option>
           </select>
         </label>
       </div>
-      <label>Descripción general<textarea id="order-description" rows="2" required placeholder="Ej: camisetas, taza personalizada, banner..."></textarea></label>
       <div>
         <div class="panel-title compact"><h3>Productos</h3><button type="button" class="link-button" id="add-item">+ Agregar fila</button></div>
         <div id="items-container" class="items-container"></div>
       </div>
       <div class="totals-box">
+        <label>Tipo descuento<select id="order-discount-type"><option value="monto">Monto</option><option value="porcentaje">Porcentaje %</option></select></label>
         <label>Descuento<input id="order-discount" type="number" min="0" step="0.01" value="0" /></label>
         <label>Abono inicial<input id="order-initial-payment" type="number" min="0" step="0.01" value="0" /></label>
         <div><span>Subtotal</span><strong id="order-subtotal">0.00</strong></div>

@@ -1,77 +1,84 @@
-# Gestor de Pedidos V2
+# Gestor de Pedidos V2 POS
 
-Versión reorganizada del gestor de pedidos de **Arca de la Nueva Alianza**.
+Sistema web estático para **Arca de la Nueva Alianza**: clientes, pedidos, producción, cobranza, caja, reportes PDF y mensajes por WhatsApp.
 
-## Qué incluye
+## Módulos incluidos
 
-- Clientes con ID automático, WhatsApp e historial.
-- Pedidos con productos, cantidades, precios, descuento, total, abono y saldo.
-- Estados de producción: Pendiente, En diseño, En producción, Listo, Entregado y Anulado.
-- Cobranza con saldos pendientes y días de atraso.
-- Registro de abonos.
-- Botón de WhatsApp para recordar saldos.
-- Reportes PDF de producción, cobranza y ventas.
-- Estructura separada por módulos para que sea más fácil de mantener.
+- **Panel principal:** resumen de clientes, pedidos activos, entregados y saldos por cobrar.
+- **Clientes:** registro, edición, WhatsApp e historial.
+- **Pedidos / Producción:** creación de pedidos con productos, cantidades, precios, descuento por monto o porcentaje, abono inicial y estados simples.
+- **Estados de producción:** Activo, Pendiente, Entregado y Anulado.
+- **Cobranza:** facturas con saldo, registro de abonos y mensaje de WhatsApp.
+- **Caja POS:** abrir turno, ver ventas/abonos del día, registrar gastos, registrar ingresos extra, cobrar facturas pendientes y cerrar caja.
+- **Reportes:** filtros, vista previa y descarga PDF.
+
+## Mejoras de esta versión
+
+1. Se eliminó la descripción general del pedido. El resumen del pedido ahora se genera automáticamente desde los productos agregados.
+2. El descuento puede ser por **monto fijo** o por **porcentaje**.
+3. El mensaje de WhatsApp fue mejorado y ahora toma primero el teléfono actual del cliente, evitando contactos incorrectos por datos viejos guardados en pedidos.
+4. Se agregó módulo de **Caja POS**.
+5. Se simplificó producción a: **Activo, Pendiente, Entregado**. Se conserva **Anulado** para cancelar pedidos sin eliminarlos.
+6. Los abonos quedan guardados en el pedido y alimentan el resumen de ventas/abonos del día en caja.
+7. Se agregó navegación de vuelta al menú principal en los módulos.
 
 ## Estructura
 
 ```text
-index.html
-assets/styles.css
-src/firebase.js
-src/state.js
-src/utils.js
-src/ui.js
-src/clientes.js
-src/pedidos.js
-src/cobranza.js
-src/reportes.js
-src/render.js
-src/app.js
-firestore.rules
+gestor-pedidos-v2/
+├── index.html
+├── assets/styles.css
+├── src/
+│   ├── app.js
+│   ├── firebase.js
+│   ├── state.js
+│   ├── utils.js
+│   ├── ui.js
+│   ├── clientes.js
+│   ├── pedidos.js
+│   ├── cobranza.js
+│   ├── caja.js
+│   ├── reportes.js
+│   └── render.js
+├── firestore.rules
+└── README.md
 ```
 
-## Cómo publicarlo en Vercel
+## Publicar en Vercel
 
-1. Sube todos estos archivos al repositorio de GitHub.
-2. En Vercel, importa el repositorio.
-3. Como es una app estática, no necesitas comando de build.
-4. Output directory: dejar vacío o raíz del proyecto.
-5. Publicar.
+No requiere build. Solo sube los archivos al repositorio y redeploy en Vercel.
 
 ## Firebase
 
-Este proyecto conserva la configuración actual de Firebase del sistema original:
+El sistema usa las colecciones:
 
-- projectId: `mi-negocio-de-sublimacion`
-- colecciones usadas: `clientes` y `pedidos`
-- autenticación: anónima
+- `clientes`
+- `pedidos`
+- `cajaTurnos`
 
-En Firebase Console activa:
+Recuerda publicar las reglas de `firestore.rules` en Firebase Console.
 
-1. Authentication → Sign-in method → Anonymous.
-2. Firestore Database.
-3. Rules: puedes usar el archivo `firestore.rules` incluido.
+## Recomendación importante
 
-## Nota importante de seguridad
+Para producción real, lo siguiente debería ser agregar **login con correo y contraseña** y reglas por usuario. Actualmente la versión mantiene autenticación anónima para conservar compatibilidad con tu proyecto original.
 
-La autenticación anónima sirve para comenzar rápido, pero para un negocio real conviene pasar luego a login con correo y contraseña. Así evitas que cualquier persona que tenga la URL pueda entrar al sistema.
 
-## Próxima mejora recomendada
+## Login privado con Firebase
 
-Agregar login privado con correo/contraseña y reglas de Firestore limitadas a tu usuario.
+Esta versión ya no usa acceso anónimo. Para entrar al POS debes crear un usuario con correo y contraseña en Firebase.
 
-## Mejoras incluidas en Reportes
+Pasos recomendados:
 
-La sección de reportes ahora permite filtrar antes de descargar el PDF:
+1. Entra a Firebase Console.
+2. Abre el proyecto `mi-negocio-de-sublimacion`.
+3. Ve a **Authentication > Sign-in method**.
+4. Activa **Email/Password**.
+5. Ve a **Users** y crea el usuario que usarás para entrar al sistema.
+6. Desactiva **Anonymous** si estaba activo.
+7. Publica las reglas de `firestore.rules`.
 
-- Tipo de reporte: Producción, Cobranza o Ventas.
-- Fecha a filtrar: entrega, registro o última actualización.
-- Rango de fechas: desde / hasta.
-- Estado del pedido.
-- Moneda.
-- Cliente.
-- Estado de pago: todos, con saldo pendiente o pagados.
-- Buscador por cliente, pedido, fecha o estado.
+Con esto, la página mostrará primero una pantalla de acceso y no cargará clientes, pedidos, caja ni reportes hasta que exista una sesión válida.
 
-Antes de descargar, el sistema muestra una vista previa con totales, saldos y una tabla con los registros que irán al PDF.
+### Importante sobre seguridad
+
+Las reglas actuales permiten leer y escribir solo a usuarios autenticados. Para un negocio pequeño con uno o pocos usuarios está bien. Más adelante se puede mejorar con roles, por ejemplo: administrador, cajero y producción.

@@ -1,5 +1,5 @@
 import { state, ESTADOS, ESTADOS_ACTIVOS } from './state.js';
-import { calcPedido, money, BUSINESS_NAME, todayISO, escapeHtml, daysLate, byDeliveryDate } from './utils.js';
+import { calcPedido, money, BUSINESS_NAME, todayISO, escapeHtml, daysLate, byDeliveryDate, normalizeEstado, shortOrderDescription } from './utils.js';
 import { toast, qs } from './ui.js';
 
 const reportState = {
@@ -34,7 +34,7 @@ function getDateValue(pedido, field = 'fecha_entrega') {
 }
 
 function getOrderStatus(p) {
-  return p.estado || 'Pendiente';
+  return normalizeEstado(p.estado || 'Pendiente');
 }
 
 function getSelectedClientName() {
@@ -203,7 +203,7 @@ function getFilteredOrders() {
   });
 
   if (reportState.search) {
-    rows = rows.filter(p => `${p.cliente || ''} ${p.descripcion || ''} ${p.fecha_entrega || ''} ${p.estado || ''}`.toLowerCase().includes(reportState.search));
+    rows = rows.filter(p => `${p.cliente || ''} ${shortOrderDescription(p)} ${p.fecha_entrega || ''} ${getOrderStatus(p)}`.toLowerCase().includes(reportState.search));
   }
 
   return rows.sort(sortReportRows);
@@ -260,7 +260,7 @@ function renderTable(rows) {
             return `<tr>
               <td>${escapeHtml(getDateValue(p, reportState.dateField) || p.fecha_entrega || '')}</td>
               <td>${escapeHtml(p.cliente || 'Sin cliente')}</td>
-              <td>${escapeHtml(p.descripcion || '')}</td>
+              <td>${escapeHtml(shortOrderDescription(p))}</td>
               <td>${escapeHtml(getOrderStatus(p))}</td>
               <td>${money(c.total, currency)}</td>
               <td>${money(c.totalPagado, currency)}</td>
@@ -302,7 +302,7 @@ export function generateCurrentReport() {
   rows.forEach(p => {
     const c = calcPedido(p);
     const currency = p.moneda || 'C$';
-    const pedido = pdf.splitTextToSize(String(p.descripcion || ''), 58);
+    const pedido = pdf.splitTextToSize(String(shortOrderDescription(p)), 58);
     const rowHeight = Math.max(8, pedido.length * 4 + 2);
     y = pageBreak(pdf, y, rowHeight + 8);
     if (y < 28) y = drawTableHeader(pdf, y);

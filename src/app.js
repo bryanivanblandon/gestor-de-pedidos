@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { auth, signInAnonymously, onAuthStateChanged } from './firebase.js';
+import { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, setPersistence, browserLocalPersistence } from './firebase.js';
 import { qs, qsa, showView, closeDialog, setSyncStatus, toast } from './ui.js';
 import { listenClientes, saveClient, editClient, resetClientForm, showClientHistory } from './clientes.js';
 import {
@@ -18,30 +18,101 @@ import {
   showOrderDetail
 } from './pedidos.js';
 import { generateReport, setupReportEvents } from './reportes.js';
+import { listenCaja, openCashShift, addCashExpense, addManualIncome, closeCashShift } from './caja.js';
 
 let started = false;
+let unsubscribers = [];
 
 function boot() {
   bindNavigation();
   bindForms();
   bindDynamicActions();
   setupReportEvents();
+  bindAuthForms();
   authStart();
 }
 
 function authStart() {
   onAuthStateChanged(auth, user => {
-    if (user && !started) {
-      started = true;
+    const privateEls = qsa('.app-private');
+    const loginView = qs('#login-view');
+    const sessionUser = qs('#session-user');
+
+    if (user) {
+      loginView.hidden = true;
+      privateEls.forEach(el => { el.hidden = false; });
+      sessionUser.textContent = `Sesión: ${user.email || 'usuario autorizado'}`;
       setSyncStatus('Conectado', true);
-      listenClientes();
-      listenPedidos();
+
+      if (!started) {
+        started = true;
+        unsubscribers = [listenClientes(), listenPedidos(), listenCaja()].filter(Boolean);
+      }
+      return;
     }
-    if (!user) signInAnonymously(auth).catch(err => {
-      console.error(err);
-      setSyncStatus('Error de conexión');
-      toast('No se pudo conectar con Firebase.');
-    });
+
+    privateEls.forEach(el => { el.hidden = true; });
+    loginView.hidden = false;
+    if (started) {
+      unsubscribers.forEach(unsub => { try { unsub(); } catch (err) { console.warn(err); } });
+      unsubscribers = [];
+    }
+    state.clientes = [];
+    state.pedidos = [];
+    state.cajaTurnos = [];
+    started = false;
+    setSyncStatus('Sin sesión');
+  });
+}
+
+function friendlyAuthError(error) {
+  const code = error?.code || '';
+  if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) return 'Correo o contraseña incorrectos.';
+  if (code.includes('too-many-requests')) return 'Demasiados intentos. Espera unos minutos e intenta de nuevo.';
+  if (code.includes('network-request-failed')) return 'Problema de conexión. Revisa internet e intenta de nuevo.';
+  if (code.includes('operation-not-allowed')) return 'Activa el proveedor Correo/Contraseña en Firebase Authentication.';
+  return 'No se pudo iniciar sesión. Revisa los datos e intenta de nuevo.';
+}
+
+function showLoginError(message) {
+  const box = qs('#login-error');
+  box.textContent = message;
+  box.hidden = false;
+}
+
+function bindAuthForms() {
+  qs('#login-form')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const email = qs('#login-email').value.trim();
+    const password = qs('#login-password').value;
+    const errorBox = qs('#login-error');
+    errorBox.hidden = true;
+
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithEmailAndPassword(auth, email, password);
+      toast('Sesión iniciada.');
+    } catch (error) {
+      console.error(error);
+      showLoginError(friendlyAuthError(error));
+    }
+  });
+
+  qs('#reset-password')?.addEventListener('click', async () => {
+    const email = qs('#login-email').value.trim();
+    if (!email) return showLoginError('Escribe tu correo para enviarte el enlace de recuperación.');
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showLoginError('Te envié un correo para restablecer la contraseña.');
+    } catch (error) {
+      console.error(error);
+      showLoginError('No se pudo enviar el correo. Revisa que el usuario exista en Firebase.');
+    }
+  });
+
+  qs('#logout-button')?.addEventListener('click', async () => {
+    await signOut(auth);
+    toast('Sesión cerrada.');
   });
 }
 
@@ -85,8 +156,12 @@ function bindForms() {
   qs('#cancel-client-edit').addEventListener('click', () => resetClientForm());
   qs('#order-form').addEventListener('submit', saveOrder);
   qs('#payment-form').addEventListener('submit', savePayment);
+  qs('#cash-open-form')?.addEventListener('submit', openCashShift);
+  qs('#cash-expense-form')?.addEventListener('submit', addCashExpense);
+  qs('#cash-income-form')?.addEventListener('submit', addManualIncome);
+  qs('#cash-close')?.addEventListener('click', closeCashShift);
   qs('#add-item').addEventListener('click', () => addItemRow());
-  ['#order-discount', '#order-initial-payment'].forEach(id => qs(id).addEventListener('input', recalcOrderForm));
+  ['#order-discount', '#order-discount-type', '#order-initial-payment'].forEach(id => qs(id)?.addEventListener('input', recalcOrderForm));
 }
 
 function bindDynamicActions() {

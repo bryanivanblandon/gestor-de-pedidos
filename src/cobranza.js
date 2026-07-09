@@ -1,10 +1,10 @@
 import { state } from './state.js';
 import { qs, setEmpty } from './ui.js';
-import { calcPedido, daysLate, escapeHtml, money } from './utils.js';
+import { calcPedido, daysLate, escapeHtml, money, normalizeEstado, shortOrderDescription } from './utils.js';
 
 export function getDebts() {
   return state.pedidos
-    .filter(p => (p.estado || 'Pendiente') !== 'Anulado')
+    .filter(p => normalizeEstado(p.estado || 'Pendiente') !== 'Anulado')
     .map(p => ({ ...p, calc: calcPedido(p), late: daysLate(p.fecha_entrega) }))
     .filter(p => p.calc.saldo > 0)
     .sort((a, b) => b.late - a.late || String(a.fecha_entrega || '').localeCompare(String(b.fecha_entrega || '')));
@@ -31,7 +31,7 @@ export function renderCobranza() {
       <div class="record-head">
         <div>
           <div class="record-title">${escapeHtml(d.cliente || 'Sin cliente')}</div>
-          <div class="record-sub">${escapeHtml(d.descripcion || '')} · Entrega: <strong>${escapeHtml(d.fecha_entrega || '')}</strong>${d.late ? ` · <strong>${d.late} días tarde</strong>` : ''}</div>
+          <div class="record-sub">${escapeHtml(shortOrderDescription(d))} · Entrega: <strong>${escapeHtml(d.fecha_entrega || '')}</strong>${d.late ? ` · <strong>${d.late} días tarde</strong>` : ''}</div>
         </div>
         <div class="record-meta">
           <div>${money(d.calc.saldo, d.moneda || 'C$')}</div>
