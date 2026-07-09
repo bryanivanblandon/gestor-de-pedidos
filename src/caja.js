@@ -191,8 +191,8 @@ export async function saveExchangeRate() {
 
 export async function openCashShift(event) {
   event.preventDefault();
-  const localShift = getActiveShift();
-  if (localShift) return toast('Ya hay una caja abierta. Si no la ves, recarga la página.');
+  const activeShift = getActiveShift();
+  if (activeShift) return toast('Ya hay una caja abierta. Si no la ves, recarga la página.');
 
   let remoteOpen = [];
   try {
