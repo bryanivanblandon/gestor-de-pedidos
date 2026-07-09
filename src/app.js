@@ -46,8 +46,11 @@ function authStart() {
     if (user) {
       loginView.hidden = true;
       privateEls.forEach(el => { el.hidden = false; });
-      sessionUser.textContent = `Sesión: ${user.email || 'usuario autorizado'}`;
+      state.usuarioInterno = { id: 'admin-firebase', usuario: 'Administrador', rol: 'admin' };
+      sessionUser.textContent = `Sesión: ${user.email || 'usuario autorizado'} · POS: Administrador`;
       setSyncStatus('Conectado', true);
+      applyPermissions();
+      showView('dashboard');
 
       if (!started) {
         started = true;
@@ -80,7 +83,9 @@ function friendlyAuthError(error) {
   if (code.includes('too-many-requests')) return 'Demasiados intentos. Espera unos minutos e intenta de nuevo.';
   if (code.includes('network-request-failed')) return 'Problema de conexión. Revisa internet e intenta de nuevo.';
   if (code.includes('operation-not-allowed')) return 'Activa el proveedor Correo/Contraseña en Firebase Authentication.';
-  return 'No se pudo iniciar sesión. Revisa los datos e intenta de nuevo.';
+  if (code.includes('unauthorized-domain')) return 'Este dominio de Vercel no está autorizado en Firebase. Agrégalo en Authentication > Settings > Authorized domains.';
+  if (code.includes('email-already-in-use')) return 'Ese correo ya existe.';
+  return `No se pudo iniciar sesión. Detalle: ${code || 'error desconocido'}.`;
 }
 
 function showLoginError(message) {
@@ -97,13 +102,26 @@ function bindAuthForms() {
     const errorBox = qs('#login-error');
     errorBox.hidden = true;
 
+    const submitButton = event.submitter;
+    if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Entrando…'; }
     try {
       await setPersistence(auth, browserLocalPersistence);
-      await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      if (credential?.user) {
+        qs('#login-view').hidden = true;
+        qsa('.app-private').forEach(el => { el.hidden = false; });
+        state.usuarioInterno = { id: 'admin-firebase', usuario: 'Administrador', rol: 'admin' };
+        qs('#session-user').textContent = `Sesión: ${credential.user.email || email} · POS: Administrador`;
+        setSyncStatus('Conectado', true);
+        applyPermissions();
+        showView('dashboard');
+      }
       toast('Sesión iniciada.');
     } catch (error) {
       console.error(error);
       showLoginError(friendlyAuthError(error));
+    } finally {
+      if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Entrar al sistema'; }
     }
   });
 

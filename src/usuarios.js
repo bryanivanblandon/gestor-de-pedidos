@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { usuariosRef, addDoc, doc, updateDoc, onSnapshot, serverTimestamp, db } from './firebase.js';
-import { qs, qsa, openDialog, closeDialog, setEmpty, toast } from './ui.js';
+import { qs, qsa, closeDialog, setEmpty, toast } from './ui.js';
 import { escapeHtml } from './utils.js';
 
 export const ROLE_PERMISSIONS = {
@@ -17,14 +17,12 @@ export function listenUsuarios() {
 }
 
 export function ensureInternalUser() {
-  if (state.usuarioInterno) return;
-  if (!state.usuarios.length) {
-    state.usuarioInterno = { id: 'admin-local', usuario: 'Administrador', rol: 'admin' };
+  if (state.usuarioInterno) {
     applyPermissions();
     return;
   }
-  const dialog = qs('#internal-login-dialog');
-  if (dialog && !dialog.open) openDialog('#internal-login-dialog');
+  state.usuarioInterno = { id: 'admin-firebase', usuario: 'Administrador', rol: 'admin' };
+  applyPermissions();
 }
 
 export function hasPermission(view) {
