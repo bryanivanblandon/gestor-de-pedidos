@@ -89,6 +89,35 @@ export function findProductByInput(value = '') {
     || state.productos.find(p => optionLabel(p).toLowerCase().includes(text));
 }
 
+
+function normalizePrefix(text = '') {
+  const clean = String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
+  return (clean.slice(0, 3) || 'PRO');
+}
+
+function generateProductCode(category = '', name = '', currentId = '') {
+  const prefix = normalizePrefix(category || name);
+  const max = state.productos
+    .filter(p => p.id !== currentId && String(p.codigo || '').toUpperCase().startsWith(prefix))
+    .map(p => Number(String(p.codigo || '').replace(prefix, '').replace(/\D/g, '') || 0))
+    .reduce((a, b) => Math.max(a, b), 0);
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
+}
+
+export function previewNextProductCode() {
+  const codeInput = qs('#product-code');
+  if (!codeInput) return;
+  const id = qs('#product-doc-id')?.value || '';
+  if (id) return;
+  const category = qs('#product-category')?.value || '';
+  const name = qs('#product-name')?.value || '';
+  codeInput.value = generateProductCode(category, name);
+}
+
 export async function saveProduct(event) {
   event.preventDefault();
   const id = qs('#product-doc-id').value;
@@ -96,7 +125,7 @@ export async function saveProduct(event) {
   const costo = Number(qs('#product-cost').value || 0);
   const stock = Number(qs('#product-stock').value || 0);
   const payload = {
-    codigo: qs('#product-code').value.trim().toUpperCase(),
+    codigo: id ? qs('#product-code').value.trim().toUpperCase() : generateProductCode(qs('#product-category').value.trim(), qs('#product-name').value.trim()),
     nombre: qs('#product-name').value.trim(),
     categoria: qs('#product-category').value.trim(),
     tipoVenta: qs('#product-sale-type')?.value || 'unidad',
@@ -107,7 +136,7 @@ export async function saveProduct(event) {
     margen: precio > 0 ? ((precio - costo) / precio) * 100 : 0,
     updatedAt: serverTimestamp(),
   };
-  if (!payload.codigo || !payload.nombre) return toast('Ingresa código y nombre del producto.');
+  if (!payload.nombre) return toast('Ingresa el nombre del producto.');
   if (id) {
     await updateDoc(doc(db, 'productos', id), payload);
     toast('Producto actualizado.');
@@ -138,6 +167,7 @@ export function editProduct(id) {
 export function resetProductForm() {
   qs('#product-form')?.reset();
   if (qs('#product-sale-type')) qs('#product-sale-type').value = 'unidad';
+  if (qs('#product-code')) qs('#product-code').value = generateProductCode('', '');
   qs('#product-doc-id').value = '';
   qs('#product-form-title').textContent = 'Nuevo producto';
   qs('#cancel-product-edit').hidden = true;
@@ -180,11 +210,11 @@ export async function adjustInventoryForOrder(oldOrder = null, newOrder = null) 
   const deltas = new Map();
   oldItems.forEach(item => {
     if (!item.productoId) return;
-    deltas.set(item.productoId, (deltas.get(item.productoId) || 0) + Number(item.cantidad || 0));
+    deltas.set(item.productoId, (deltas.get(item.productoId) || 0) + lineItemQtyForStock(item));
   });
   newItems.forEach(item => {
     if (!item.productoId) return;
-    deltas.set(item.productoId, (deltas.get(item.productoId) || 0) - Number(item.cantidad || 0));
+    deltas.set(item.productoId, (deltas.get(item.productoId) || 0) - lineItemQtyForStock(item));
   });
   const tasks = [];
   for (const [productId, delta] of deltas.entries()) {

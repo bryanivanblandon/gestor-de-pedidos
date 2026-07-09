@@ -19,8 +19,8 @@ import {
   printOrderTicket
 } from './pedidos.js';
 import { generateReport, setupReportEvents } from './reportes.js';
-import { listenCaja, openCashShift, addCashExpense, addManualIncome, closeCashShift, saveExchangeRate, renderCloseTotal, confirmCloseCashShift, printExpenseTicket } from './caja.js';
-import { listenInventario, saveProduct, resetProductForm, editProduct, addInventoryMovement, showKardex } from './inventario.js';
+import { listenCaja, openCashShift, addCashExpense, addManualIncome, closeCashShift, saveExchangeRate, renderCloseTotal, confirmCloseCashShift, printExpenseTicket, forceCloseActiveShift } from './caja.js';
+import { listenInventario, saveProduct, resetProductForm, editProduct, addInventoryMovement, showKardex, previewNextProductCode } from './inventario.js';
 import { listenCotizaciones, openQuoteForm, resetQuoteForm, addQuoteItemRow, recalcQuoteForm, saveQuote, renderCotizaciones, printQuoteTicket, convertQuoteToOrder } from './cotizaciones.js';
 import { listenUsuarios, saveInternalUser, editInternalUser, internalLogin, ensureInternalUser, applyPermissions } from './usuarios.js';
 
@@ -175,11 +175,14 @@ function bindForms() {
   qs('#cash-expense-form')?.addEventListener('submit', addCashExpense);
   qs('#cash-income-form')?.addEventListener('submit', addManualIncome);
   qs('#cash-close')?.addEventListener('click', closeCashShift);
+  qs('#cash-force-close')?.addEventListener('click', forceCloseActiveShift);
   qs('#cash-exchange-save')?.addEventListener('click', saveExchangeRate);
   qs('#cash-close-form')?.addEventListener('submit', confirmCloseCashShift);
   qs('#cash-close-cancel')?.addEventListener('click', () => closeDialog('#cash-close-dialog'));
   qsa('.denom-input, #close-usd-amount').forEach(input => input.addEventListener('input', renderCloseTotal));
   qs('#product-form')?.addEventListener('submit', saveProduct);
+  ['#product-name', '#product-category'].forEach(id => qs(id)?.addEventListener('input', previewNextProductCode));
+  previewNextProductCode();
   qs('#quote-form')?.addEventListener('submit', saveQuote);
   qs('#add-quote-item')?.addEventListener('click', () => addQuoteItemRow());
   ['#quote-discount', '#quote-discount-type'].forEach(id => qs(id)?.addEventListener('input', recalcQuoteForm));

@@ -5,13 +5,13 @@ Sistema POS web para Arca de la Nueva Alianza: clientes, pedidos/facturación, c
 ## Módulos incluidos
 
 - Login privado con Firebase Email/Password.
-- Usuarios internos sin correo, con usuario + PIN y niveles: administrador, ventas, caja y producción.
+- Usuarios internos sin correo, con usuario + PIN y dos niveles: administrador y usuario.
 - Clientes con WhatsApp e historial.
 - Pedidos/facturas con descuento por monto o porcentaje.
-- Productos manuales o seleccionados desde inventario.
+- Pedidos y cotizaciones obligan a seleccionar productos del inventario antes de cobrar, para evitar precios escritos por error.
 - Productos por unidad o por área en cm², útil para vinil sobre PVC: ancho × alto × precio por cm².
 - Cotizaciones guardadas, imprimibles y convertibles a pedido/factura.
-- Inventario con código, nombre, categoría, costo, precio, margen, stock mínimo y kardex.
+- Inventario con código automático, nombre, categoría, costo, precio, margen, stock mínimo y kardex.
 - Caja con apertura de turno, tipo de cambio, ingresos, gastos, cobros y cierre por denominación.
 - Tickets de pedido/factura, cotización y gasto en formato 80mm.
 - Reportes visibles en navegador para imprimir o descargar: producción, cobranza, ventas, gastos, inventario y cotizaciones.
@@ -37,10 +37,8 @@ Sistema POS web para Arca de la Nueva Alianza: clientes, pedidos/facturación, c
 
 Los usuarios internos se crean desde Configuración. No usan correo. Sirven para separar permisos dentro del POS:
 
-- Administrador: ve todo.
-- Ventas: clientes, pedidos, caja, cobranza, inventario, cotizaciones y reportes.
-- Caja: caja, cobros, clientes, pedidos, cobranza, cotizaciones y reportes.
-- Producción: pedidos, inventario y cotizaciones.
+- Administrador: ve todo, incluyendo configuración, cobranza, reportes y estados de cuenta.
+- Usuario: puede trabajar clientes, pedidos, caja, inventario y cotizaciones, pero no entra a configuración, reportes ni cobranza/estados de cuenta.
 
 Nota: el acceso real a Firebase sigue protegido por el login principal. Los usuarios internos son una capa de operación dentro del POS.
 
@@ -57,3 +55,12 @@ Para productos como vinil sobre PVC:
 ## Subida a Vercel
 
 No requiere build. Sube todo el contenido del proyecto y Vercel lo publicará como aplicación estática.
+
+
+## Cambios de seguridad operativa
+
+- El código de inventario se genera automático usando las primeras 3 letras de la categoría o nombre, por ejemplo `TAZ001`.
+- En pedidos y cotizaciones, el precio queda bloqueado hasta seleccionar un producto del inventario.
+- Una cotización convertida queda marcada como `Convertida` y no puede convertirse de nuevo.
+- Al convertir una cotización a pedido/factura, el sistema pregunta si hay abono inicial.
+- Caja incluye recuperación administrativa para turnos trabados, visible solo para administrador.

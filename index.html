@@ -149,6 +149,11 @@
           <button class="primary" id="cash-close" type="button">Cerrar caja</button>
         </div>
         <div id="cash-status" class="cash-status"></div>
+        <div class="mini-panel danger-zone permiso-admin" id="cash-recovery-panel">
+          <h3>Recuperar caja trabada</h3>
+          <p class="muted-note">Úsalo solo si quedó un turno abierto y no te deja cerrarlo. Cierra administrativamente el turno abierto sin conteo.</p>
+          <button class="danger" id="cash-force-close" type="button">Cerrar turno abierto administrativamente</button>
+        </div>
         <div id="cash-open-panel">
           <form id="cash-open-form" class="cash-open-form">
             <label>Tipo de cambio C$ por $1<input id="cash-exchange-rate" type="number" min="1" step="0.01" value="36.50" /></label>
@@ -193,10 +198,10 @@
       <div class="two-column">
         <section class="panel">
           <h2 id="product-form-title">Nuevo producto</h2>
-          <p class="muted-note">Registra productos para facturar rápido, controlar stock y alimentar el kardex.</p>
+          <p class="muted-note">Registra productos para facturar rápido, controlar stock y alimentar el kardex. El código se genera automático según categoría o nombre, por ejemplo TAZ001.</p>
           <form id="product-form" class="form-stack">
             <input type="hidden" id="product-doc-id" />
-            <label>Código<input id="product-code" required placeholder="TAZA-11OZ" /></label>
+            <label>Código automático<input id="product-code" readonly placeholder="Se generará al guardar" /></label>
             <label>Nombre<input id="product-name" required placeholder="Taza blanca 11 oz" /></label>
             <label>Categoría<input id="product-category" placeholder="Tazas, camisetas, insumos..." /></label>
             <label>Forma de venta
@@ -264,16 +269,14 @@
             <label>Nivel
               <select id="internal-user-role">
                 <option value="admin">Administrador</option>
-                <option value="ventas">Ventas</option>
-                <option value="caja">Caja</option>
-                <option value="produccion">Producción</option>
+                <option value="usuario">Usuario</option>
               </select>
             </label>
             <button class="primary" type="submit">Guardar usuario</button>
           </form>
         </section>
         <section class="panel">
-          <div class="panel-title wrap"><div><h2>Lista de usuarios</h2><p>El administrador ve todo. Ventas no ve configuración; producción solo pedidos/inventario.</p></div></div>
+          <div class="panel-title wrap"><div><h2>Lista de usuarios</h2><p>El administrador ve todo. Usuario puede vender, cotizar, cobrar, usar caja e inventario, pero no ve configuración, reportes ni estados de cuenta/cobranza.</p></div></div>
           <div id="internal-users-list" class="card-list"></div>
         </section>
       </div>

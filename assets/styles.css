@@ -155,3 +155,26 @@ textarea { width: 100%; resize: vertical; border: 1px solid var(--line); border-
 .permiso-admin[hidden], [data-view][hidden] { display: none !important; }
 @media (max-width: 1180px) { .pos-item-row { grid-template-columns: 70px 1fr 1fr; } .pos-item-row .remove-item { grid-column: auto; } }
 @media (max-width: 720px) { .pos-item-row { grid-template-columns: 1fr; } .pos-item-row .line-total { text-align: left; } }
+
+.danger-zone {
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  background: rgba(254, 226, 226, 0.55);
+}
+button.danger,
+.danger {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+}
+.warning-text {
+  color: #9a3412;
+  font-weight: 700;
+  margin-top: 0.35rem;
+}
+.item-price:disabled,
+.item-desc[readonly],
+#product-code[readonly] {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}

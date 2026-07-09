@@ -17,8 +17,16 @@ export function listenCaja() {
   return () => { unsubShifts(); unsubConfig(); };
 }
 
+function shiftSortValue(t = {}) {
+  if (typeof t.createdAt?.seconds === 'number') return t.createdAt.seconds;
+  const parsed = Date.parse(t.fecha || '');
+  return Number.isNaN(parsed) ? 0 : parsed / 1000;
+}
+
 export function getActiveShift() {
-  return state.cajaTurnos.find(t => t.estado === 'abierto') || null;
+  return state.cajaTurnos
+    .filter(t => t.estado === 'abierto')
+    .sort((a, b) => shiftSortValue(b) - shiftSortValue(a))[0] || null;
 }
 
 export function getPaymentsForShift(shift = getActiveShift()) {
@@ -57,6 +65,7 @@ export function renderCaja() {
   const summary = qs('#cash-summary');
   const tcInput = qs('#cash-exchange-rate');
   if (tcInput && document.activeElement !== tcInput) tcInput.value = Number(state.config?.tipoCambio || 36.5);
+  const openCount = state.cajaTurnos.filter(t => t.estado === 'abierto').length;
   if (!status) return;
 
   if (!shift) {
@@ -65,7 +74,7 @@ export function renderCaja() {
     activePanel.hidden = true;
   } else {
     const totals = shiftTotals(shift);
-    status.innerHTML = `<span class="status activo">Caja abierta</span><p>Turno iniciado el ${escapeHtml(shift.fecha || todayISO())}. Tipo de cambio activo: <strong>C$${totals.tipoCambio.toFixed(2)}</strong> por $1.</p>`;
+    status.innerHTML = `<span class="status activo">Caja abierta</span><p>Turno iniciado el ${escapeHtml(shift.fecha || todayISO())}. Tipo de cambio activo: <strong>C$${totals.tipoCambio.toFixed(2)}</strong> por $1.</p>${openCount > 1 ? '<p class="warning-text">Aviso: hay más de un turno abierto. Cierra el turno activo o usa recuperación administrativa.</p>' : ''}`;
     openPanel.hidden = true;
     activePanel.hidden = false;
     summary.innerHTML = `
@@ -177,6 +186,26 @@ export async function confirmCloseCashShift(event) {
   });
   closeDialog('#cash-close-dialog');
   toast(`Caja cerrada. Diferencia: ${money(diferencia, 'C$')}`);
+}
+
+
+export async function forceCloseActiveShift() {
+  const shift = getActiveShift();
+  if (!shift) return toast('No hay turno abierto para cerrar.');
+  const ok = confirm('Esto cerrará administrativamente el turno abierto sin conteo de billetes. Úsalo solo para recuperar una caja trabada. ¿Continuar?');
+  if (!ok) return;
+  const totals = shiftTotals(shift);
+  await updateDoc(doc(db, 'cajaTurnos', shift.id), {
+    estado: 'cerrado',
+    cierre: totals.efectivoEsperado,
+    diferencia: 0,
+    cierreAdministrativo: true,
+    notaCierre: 'Cierre administrativo por recuperación de turno trabado',
+    totales: totals,
+    closedAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+  toast('Turno cerrado administrativamente. Ya puedes abrir una caja nueva.');
 }
 
 function collectDenominations() {

@@ -126,10 +126,10 @@ export function addItemRow(cantidad = 1, descripcion = '', precio = '', producto
   row.innerHTML = `
     <input class="item-qty" type="number" min="1" step="1" value="${Number(cantidad || 1)}" aria-label="Cantidad" />
     <input class="item-product-search" list="product-options" value="${escapeHtml(product ? optionLabel(product) : '')}" placeholder="Buscar inventario por código o nombre" aria-label="Buscar producto" />
-    <input class="item-desc" value="${escapeHtml(descripcion || product?.nombre || '')}" placeholder="Detalle manual" aria-label="Producto" />
+    <input class="item-desc" value="${escapeHtml(descripcion || product?.nombre || '')}" placeholder="Se llena al seleccionar producto" aria-label="Producto" readonly />
     <input class="item-width area-input" type="number" min="0" step="0.01" value="${Number(ancho || 0)}" placeholder="Ancho cm" aria-label="Ancho cm" />
     <input class="item-height area-input" type="number" min="0" step="0.01" value="${Number(alto || 0)}" placeholder="Alto cm" aria-label="Alto cm" />
-    <input class="item-price" type="number" min="0" step="0.0001" value="${precio ?? product?.precio ?? ''}" placeholder="Precio" aria-label="Precio" />
+    <input class="item-price" type="number" min="0" step="0.0001" value="${product ? (precio ?? product?.precio ?? '') : ''}" placeholder="Precio" aria-label="Precio" ${product ? '' : 'disabled'} />
     <span class="line-total">0.00</span>
     <button type="button" class="remove-item" title="Eliminar fila">×</button>`;
   qs('#items-container').appendChild(row);
@@ -146,14 +146,26 @@ function updateAreaVisibility(row) {
 }
 
 function applyProductToRow(row) {
-  const product = findProductByInput(row.querySelector('.item-product-search').value);
-  if (!product) return;
+  const search = row.querySelector('.item-product-search');
+  const product = findProductByInput(search.value);
+  if (!product) {
+    row.dataset.productId = '';
+    row.dataset.productCode = '';
+    row.dataset.tipoVenta = 'unidad';
+    row.querySelector('.item-desc').value = '';
+    row.querySelector('.item-price').value = '';
+    row.querySelector('.item-price').disabled = true;
+    updateAreaVisibility(row);
+    recalcOrderForm();
+    return;
+  }
   row.dataset.productId = product.id;
   row.dataset.productCode = product.codigo || '';
   row.dataset.tipoVenta = product.tipoVenta || 'unidad';
   row.querySelector('.item-product-search').value = optionLabel(product);
   row.querySelector('.item-desc').value = product.nombre || '';
   row.querySelector('.item-price').value = Number(product.precio || 0);
+  row.querySelector('.item-price').disabled = false;
   updateAreaVisibility(row);
   recalcOrderForm();
 }
@@ -180,7 +192,7 @@ function getItemsFromForm() {
     ancho: Number(row.querySelector('.item-width')?.value || 0),
     alto: Number(row.querySelector('.item-height')?.value || 0),
     precio: Number(row.querySelector('.item-price').value || 0),
-  })).filter(item => item.cantidad > 0 && item.descripcion);
+  })).filter(item => item.cantidad > 0 && item.descripcion && item.productoId);
 }
 
 function getFormTotals() {
@@ -193,8 +205,9 @@ function getFormTotals() {
     : Math.min(subtotal, descuentoValor);
   const total = Math.max(0, subtotal - descuento);
   const abono = Number(qs('#order-initial-payment').value || 0);
-  const saldo = Math.max(0, total - abono);
-  return { items, subtotal, descuento, descuentoTipo, descuentoValor, total, abono, saldo };
+  const safeAbono = Math.min(Math.max(0, abono), total);
+  const saldo = Math.max(0, total - safeAbono);
+  return { items, subtotal, descuento, descuentoTipo, descuentoValor, total, abono: safeAbono, saldo };
 }
 
 export async function saveOrder(event) {
@@ -203,7 +216,8 @@ export async function saveOrder(event) {
   const client = state.clientes.find(c => c.id === qs('#order-client').value);
   const totals = getFormTotals();
   if (!client) return toast('Selecciona un cliente.');
-  if (!totals.items.length) return toast('Agrega al menos un producto.');
+  if (!totals.items.length) return toast('Selecciona productos del inventario antes de poner precio o guardar.');
+  if (totals.abono > 0 && !getActiveShift()) return toast('Para recibir abono inicial primero debes abrir caja.');
 
   const payload = {
     clienteId: client.id,
@@ -276,6 +290,7 @@ export async function savePayment(event) {
   const p = state.pedidos.find(x => x.id === id);
   const amount = Number(qs('#payment-amount').value || 0);
   if (!p || amount <= 0) return toast('Ingresa un monto válido.');
+  if (!getActiveShift()) return toast('Para cobrar o abonar primero debes abrir caja.');
   const c = calcPedido(p);
   if (amount > c.saldo) return toast('El abono no puede ser mayor al saldo.');
 

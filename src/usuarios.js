@@ -5,9 +5,7 @@ import { escapeHtml } from './utils.js';
 
 export const ROLE_PERMISSIONS = {
   admin: ['dashboard','clientes','pedidos','cobranza','caja','inventario','cotizaciones','reportes','configuracion'],
-  ventas: ['dashboard','clientes','pedidos','cobranza','caja','inventario','cotizaciones','reportes'],
-  caja: ['dashboard','clientes','pedidos','cobranza','caja','cotizaciones','reportes'],
-  produccion: ['dashboard','pedidos','inventario','cotizaciones'],
+  usuario: ['dashboard','clientes','pedidos','caja','inventario','cotizaciones'],
 };
 
 export function listenUsuarios() {
@@ -31,7 +29,7 @@ export function ensureInternalUser() {
 
 export function hasPermission(view) {
   const role = state.usuarioInterno?.rol || 'admin';
-  return (ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.admin).includes(view);
+  return (ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.usuario).includes(view);
 }
 
 export function applyPermissions() {
@@ -49,9 +47,9 @@ export function applyPermissions() {
 export function renderUsuarios() {
   const list = qs('#internal-users-list');
   if (!list) return;
-  if (!state.usuarios.length) return setEmpty(list, 'Aún no hay usuarios internos. Crea uno para ventas, caja o producción.');
+  if (!state.usuarios.length) return setEmpty(list, 'Aún no hay usuarios internos. Crea un administrador y usuarios de venta/operación.');
   list.innerHTML = state.usuarios.map(u => `<article class="record-card compact-record">
-    <div class="record-head"><div><div class="record-title">${escapeHtml(u.usuario || '')}</div><div class="record-sub">Nivel: <strong>${escapeHtml(u.rol || 'ventas')}</strong></div></div></div>
+    <div class="record-head"><div><div class="record-title">${escapeHtml(u.usuario || '')}</div><div class="record-sub">Nivel: <strong>${escapeHtml(u.rol || 'usuario')}</strong></div></div></div>
     <div class="record-actions"><button class="action" data-user-edit="${u.id}">Editar</button></div>
   </article>`).join('');
 }
@@ -62,7 +60,7 @@ export async function saveInternalUser(event) {
   const payload = {
     usuario: qs('#internal-user-name').value.trim(),
     pin: qs('#internal-user-pin').value.trim(),
-    rol: qs('#internal-user-role').value,
+    rol: qs('#internal-user-role').value || 'usuario',
     activo: true,
     updatedAt: serverTimestamp(),
   };
@@ -80,7 +78,7 @@ export function editInternalUser(id) {
   qs('#internal-user-id').value = u.id;
   qs('#internal-user-name').value = u.usuario || '';
   qs('#internal-user-pin').value = u.pin || '';
-  qs('#internal-user-role').value = u.rol || 'ventas';
+  qs('#internal-user-role').value = u.rol || 'usuario';
 }
 
 export function internalLogin(event) {
