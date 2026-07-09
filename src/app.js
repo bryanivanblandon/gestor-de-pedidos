@@ -29,12 +29,50 @@ let started = false;
 let unsubscribers = [];
 
 function boot() {
-  bindNavigation();
-  bindForms();
-  bindDynamicActions();
-  setupReportEvents();
+  // El login debe quedar activo aunque alguna pieza del POS falle al cargar.
   bindAuthForms();
   authStart();
+  try {
+    bindNavigation();
+    bindForms();
+    bindDynamicActions();
+    setupReportEvents();
+  } catch (error) {
+    console.error('Error iniciando módulos del POS:', error);
+    showLoginError(`El sistema cargó con un error interno: ${error?.message || error}. Sube esta versión y recarga con Ctrl + F5.`);
+  }
+}
+
+
+function enterAuthenticatedApp(user) {
+  const privateEls = qsa('.app-private');
+  const loginView = qs('#login-view');
+  const sessionUser = qs('#session-user');
+
+  if (loginView) loginView.hidden = true;
+  privateEls.forEach(el => { el.hidden = false; });
+  state.usuarioInterno = { id: 'admin-firebase', usuario: 'Administrador', rol: 'admin' };
+  if (sessionUser) sessionUser.textContent = `Sesión: ${user?.email || 'usuario autorizado'} · POS: Administrador`;
+  setSyncStatus('Conectado', true);
+  applyPermissions();
+  showView('dashboard');
+
+  if (!started) {
+    started = true;
+    try {
+      unsubscribers = [listenClientes(), listenPedidos(), listenCaja(), listenInventario(), listenCotizaciones(), listenUsuarios()].filter(Boolean);
+    } catch (error) {
+      console.error('Error cargando datos en tiempo real:', error);
+      toast(`Entraste, pero hubo un error cargando datos: ${error?.message || 'revisa Firebase'}.`);
+    }
+  }
+}
+
+function withTimeout(promise, ms = 12000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout-login')), ms))
+  ]);
 }
 
 function authStart() {
@@ -44,18 +82,7 @@ function authStart() {
     const sessionUser = qs('#session-user');
 
     if (user) {
-      loginView.hidden = true;
-      privateEls.forEach(el => { el.hidden = false; });
-      state.usuarioInterno = { id: 'admin-firebase', usuario: 'Administrador', rol: 'admin' };
-      sessionUser.textContent = `Sesión: ${user.email || 'usuario autorizado'} · POS: Administrador`;
-      setSyncStatus('Conectado', true);
-      applyPermissions();
-      showView('dashboard');
-
-      if (!started) {
-        started = true;
-        unsubscribers = [listenClientes(), listenPedidos(), listenCaja(), listenInventario(), listenCotizaciones(), listenUsuarios()].filter(Boolean);
-      }
+      enterAuthenticatedApp(user);
       return;
     }
 
@@ -105,21 +132,18 @@ function bindAuthForms() {
     const submitButton = event.submitter;
     if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Entrando…'; }
     try {
-      await setPersistence(auth, browserLocalPersistence);
-      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const credential = await withTimeout(signInWithEmailAndPassword(auth, email, password), 12000);
       if (credential?.user) {
-        qs('#login-view').hidden = true;
-        qsa('.app-private').forEach(el => { el.hidden = false; });
-        state.usuarioInterno = { id: 'admin-firebase', usuario: 'Administrador', rol: 'admin' };
-        qs('#session-user').textContent = `Sesión: ${credential.user.email || email} · POS: Administrador`;
-        setSyncStatus('Conectado', true);
-        applyPermissions();
-        showView('dashboard');
+        enterAuthenticatedApp(credential.user);
       }
       toast('Sesión iniciada.');
     } catch (error) {
       console.error(error);
-      showLoginError(friendlyAuthError(error));
+      if (error?.message === 'timeout-login') {
+        showLoginError('Firebase no respondió al iniciar sesión. Revisa internet, dominio autorizado en Firebase y recarga con Ctrl + F5. El botón ya no quedará trabado.');
+      } else {
+        showLoginError(friendlyAuthError(error));
+      }
     } finally {
       if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Entrar al sistema'; }
     }
@@ -250,5 +274,13 @@ function bindDynamicActions() {
     updateOrderStatus(select.dataset.orderStatus, select.value);
   });
 }
+
+window.addEventListener('error', event => {
+  console.error('Error global:', event.error || event.message);
+  showLoginError(`Error de carga: ${event.message || 'revisa consola'}`);
+});
+window.addEventListener('unhandledrejection', event => {
+  console.error('Promesa rechazada:', event.reason);
+});
 
 boot();

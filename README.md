@@ -89,3 +89,7 @@ Esta versión mejora la recuperación de caja: el botón **Cerrar turno abierto 
 - Las líneas manuales no afectan el kardex ni descuentan inventario.
 - Los cobros ahora permiten método de pago: **efectivo**, **tarjeta** o **transferencia**.
 - Caja separa tarjeta y transferencia del efectivo esperado: el cierre de billetes solo cuadra el dinero físico.
+
+## Corrección de login
+
+Esta versión carga primero el formulario de acceso y luego los módulos del POS. Si Firebase no responde, el botón se libera después de 12 segundos y muestra un mensaje claro en pantalla.
