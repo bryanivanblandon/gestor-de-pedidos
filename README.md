@@ -1,0 +1,91 @@
+# Gestor de Pedidos V2 / POS
+
+Sistema POS web para Arca de la Nueva Alianza: clientes, pedidos/facturación, cotizaciones, caja, inventario, cobranza, producción, reportes y tickets 80mm.
+
+## Módulos incluidos
+
+- Login privado con Firebase Email/Password.
+- Usuarios internos sin correo, con usuario + PIN y dos niveles: administrador y usuario.
+- Clientes con WhatsApp e historial.
+- Pedidos/facturas con descuento por monto o porcentaje.
+- Pedidos y cotizaciones obligan a seleccionar productos del inventario antes de cobrar, para evitar precios escritos por error.
+- Productos por unidad o por área en cm², útil para vinil sobre PVC: ancho × alto × precio por cm².
+- Cotizaciones guardadas, imprimibles y convertibles a pedido/factura.
+- Inventario con código automático, nombre, categoría, costo, precio, margen, stock mínimo y kardex.
+- Caja con apertura de turno, tipo de cambio, ingresos, gastos, cobros y cierre por denominación.
+- Tickets de pedido/factura, cotización y gasto en formato 80mm.
+- Reportes visibles en navegador para imprimir o descargar: producción, cobranza, ventas, gastos, inventario y cotizaciones.
+
+## Configuración en Firebase
+
+1. En Firebase Authentication activa Email/Password.
+2. Crea un usuario principal con correo y contraseña.
+3. Publica las reglas de `firestore.rules`.
+4. Sube el proyecto a GitHub y despliega en Vercel como sitio estático.
+
+## Colecciones usadas en Firestore
+
+- `clientes`
+- `pedidos`
+- `cotizaciones`
+- `productos`
+- `cajaTurnos`
+- `usuarios`
+- `config/pos`
+
+## Usuarios internos
+
+Los usuarios internos se crean desde Configuración. No usan correo. Sirven para separar permisos dentro del POS:
+
+- Administrador: ve todo, incluyendo configuración, cobranza, reportes y estados de cuenta.
+- Usuario: puede trabajar clientes, pedidos, caja, inventario y cotizaciones, pero no entra a configuración, reportes ni cobranza/estados de cuenta.
+
+Nota: el acceso real a Firebase sigue protegido por el login principal. Los usuarios internos son una capa de operación dentro del POS.
+
+## Venta por área cm²
+
+Para productos como vinil sobre PVC:
+
+1. En Inventario crea el producto.
+2. En Forma de venta selecciona `Por área, ancho × alto en cm²`.
+3. Coloca el precio por cm².
+4. En pedido o cotización, selecciona el producto y escribe ancho y alto.
+5. El sistema calcula: cantidad × ancho × alto × precio.
+
+## Subida a Vercel
+
+No requiere build. Sube todo el contenido del proyecto y Vercel lo publicará como aplicación estática.
+
+
+## Cambios de seguridad operativa
+
+- El código de inventario se genera automático usando las primeras 3 letras de la categoría o nombre, por ejemplo `TAZ001`.
+- En pedidos y cotizaciones, el precio queda bloqueado hasta seleccionar un producto del inventario.
+- Una cotización convertida queda marcada como `Convertida` y no puede convertirse de nuevo.
+- Al convertir una cotización a pedido/factura, el sistema pregunta si hay abono inicial.
+- Caja incluye recuperación administrativa para turnos trabados, visible solo para administrador.
+
+## Corrección de caja trabada
+
+Esta versión mejora la recuperación de caja: el botón **Cerrar turno abierto administrativamente** ya no depende solo del estado cargado en pantalla. Ahora consulta directamente la colección `cajaTurnos` en Firebase, detecta cualquier turno con estado abierto/abierta/activo/open y lo cierra administrativamente. Si había más de un turno abierto por error, los cierra todos para permitir abrir una caja nueva.
+
+
+## Novedades de esta actualización
+
+- Recuperación de caja trabada más robusta: si un turno viejo no se puede cerrar, el sistema puede **ignorarlo** desde `config/pos.ignoredShiftIds` para que ya no bloquee la apertura de una caja nueva.
+- Menú principal rediseñado con estilo más parecido a software de escritorio: accesos rápidos en barra lateral y mosaicos de colores.
+
+## Actualización de caja y pruebas
+
+- Caja ahora puede abrir un turno nuevo aunque Firebase conserve un turno viejo trabado: al abrir, si detecta turnos antiguos abiertos, pregunta si deseas ignorarlos para que ya no bloqueen el POS.
+- La recuperación guarda los turnos ignorados también en el navegador, no solo en Firebase, para evitar que el sistema se vuelva a trabar si el documento viejo no se pudo modificar.
+- En Cotizaciones se puede agregar un cliente nuevo desde el mismo formulario.
+- En Configuración se agregó una opción peligrosa para borrar datos de prueba. Requiere escribir `BORRAR TODO`.
+
+## Actualización: productos manuales y métodos de pago
+
+- En pedidos y cotizaciones ahora cada línea puede ser **Inventario** o **Manual**.
+- Las líneas manuales sirven para servicios, trabajos especiales o productos que no se controlan en stock.
+- Las líneas manuales no afectan el kardex ni descuentan inventario.
+- Los cobros ahora permiten método de pago: **efectivo**, **tarjeta** o **transferencia**.
+- Caja separa tarjeta y transferencia del efectivo esperado: el cierre de billetes solo cuadra el dinero físico.
