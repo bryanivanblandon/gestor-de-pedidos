@@ -136,3 +136,8 @@ Se reconstruyó `src/caja.js` para que los gastos, ingresos, cobros, cierre norm
 ## Caja - corrección final directa
 
 El módulo de Caja fue reemplazado por una versión directa y auto-contenida. Los botones de abrir turno, guardar gasto, ingreso extra, cerrar caja y cierre administrativo se conectan dentro de `src/caja.js`, además de las conexiones generales del sistema. La caja activa se guarda primero en `localStorage` para responder inmediatamente y luego se sincroniza con Firebase sin bloquear la pantalla.
+
+
+## Corrección caja-noincludes2
+
+Se eliminó el uso de `.includes()` dentro del módulo de Caja para evitar el error de navegador `Cannot read properties of null (reading includes)`. También se subió la versión del script para romper caché en Vercel.

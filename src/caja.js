@@ -21,13 +21,13 @@ function safeParse(raw, fallback) {
   try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
 }
 function normalizeMethod(method = 'efectivo') {
-  const value = String(method || 'efectivo').toLowerCase();
-  if (value.includes('tarjeta')) return 'tarjeta';
-  if (value.includes('transfer')) return 'transferencia';
+  const value = String(method ?? 'efectivo').toLowerCase();
+  if (value.indexOf('tarjeta') >= 0) return 'tarjeta';
+  if (value.indexOf('transfer') >= 0) return 'transferencia';
   return 'efectivo';
 }
 function isOpen(status = '') {
-  return ['abierto', 'abierta', 'activo', 'activa', 'open'].includes(String(status || '').toLowerCase().trim());
+  return new Set(['abierto', 'abierta', 'activo', 'activa', 'open']).has(String(status || '').toLowerCase().trim());
 }
 function makeId(prefix = 'caja') {
   if (crypto?.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
@@ -160,7 +160,8 @@ export function listenCaja() {
 
   const unsubConfig = onSnapshot(configRef, snap => {
     if (snap.exists()) {
-      state.config = { ...state.config, ...snap.data() };
+      const remoteConfig = snap.data() || {};
+      state.config = { ...state.config, ...remoteConfig, ignoredShiftIds: Array.isArray(remoteConfig.ignoredShiftIds) ? remoteConfig.ignoredShiftIds : [] };
       localStorage.setItem(CONFIG_KEY, JSON.stringify({ tipoCambio: state.config.tipoCambio || 36.5 }));
       renderCaja();
     }
