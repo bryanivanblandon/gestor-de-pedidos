@@ -23,7 +23,9 @@ export async function resetTestData() {
     results.push(['productos', await deleteCollection(productosRef)]);
     results.push(['cotizaciones', await deleteCollection(cotizacionesRef)]);
     results.push(['usuarios', await deleteCollection(usuariosRef)]);
-    try { localStorage.removeItem('posIgnoredShiftIds'); } catch {}
+    try {
+      ['posIgnoredShiftIds','arca_pos_caja_activa_v1','arca_pos_cajas_cerradas_v1','arca_pos_config_v1','pos_cash_active_shift_id_v4','pos_cash_active_shift_v4','pos_cash_closed_shifts_v4','pos_cash_ignored_shift_ids_v4'].forEach(k => localStorage.removeItem(k));
+    } catch {}
     await setDoc(configRef, { tipoCambio: 36.5, ignoredShiftIds: [], updatedAt: serverTimestamp() }, { merge: true });
     const total = results.reduce((s, [, n]) => s + n, 0);
     toast(`Base limpiada: ${total} registros borrados. Ya puedes usar el sistema en real.`);
