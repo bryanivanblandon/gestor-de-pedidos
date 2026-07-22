@@ -29,6 +29,14 @@ function normalizeMethod(method = 'efectivo') {
 function isOpen(status = '') {
   return new Set(['abierto', 'abierta', 'activo', 'activa', 'open']).has(String(status || '').toLowerCase().trim());
 }
+function sortShiftDesc(a = {}, b = {}) {
+  const av = Date.parse(a.createdAtLocal || a.fecha || '') || 0;
+  const bv = Date.parse(b.createdAtLocal || b.fecha || '') || 0;
+  return bv - av;
+}
+function getRemoteOpenShift() {
+  return remoteShifts.filter(t => t?.id && isOpen(t.estado)).sort(sortShiftDesc)[0] || null;
+}
 function makeId(prefix = 'caja') {
   if (crypto?.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -54,10 +62,32 @@ function sanitizeShift(shift = {}) {
     closedAtLocal: shift.closedAtLocal || null,
   };
 }
+function mergeById(a = [], b = []) {
+  const map = new Map();
+  [...a, ...b].forEach(item => {
+    const id = item?.id || item?.cashId;
+    if (!id) return;
+    map.set(id, { ...(map.get(id) || {}), ...item });
+  });
+  return Array.from(map.values());
+}
+function mergeShift(remote = {}, local = {}) {
+  const base = { ...remote, ...local, id: remote.id || local.id };
+  return sanitizeShift({
+    ...base,
+    cobros: mergeById(remote.cobros || [], local.cobros || []),
+    gastos: mergeById(remote.gastos || [], local.gastos || []),
+    ingresosManuales: mergeById(remote.ingresosManuales || [], local.ingresosManuales || []),
+  });
+}
 function readActiveShift() {
-  const shift = safeParse(localStorage.getItem(ACTIVE_KEY), null);
-  if (!shift || !shift.id || !isOpen(shift.estado)) return null;
-  return sanitizeShift(shift);
+  const remoteOpen = getRemoteOpenShift();
+  const local = safeParse(localStorage.getItem(ACTIVE_KEY), null);
+  const localOpen = local?.id && isOpen(local.estado) ? sanitizeShift(local) : null;
+  if (remoteOpen?.id && localOpen?.id === remoteOpen.id) return mergeShift(remoteOpen, localOpen);
+  if (remoteOpen?.id) return sanitizeShift(remoteOpen);
+  if (localOpen?.id) return localOpen;
+  return null;
 }
 function writeActiveShift(shift) {
   if (!shift || !shift.id || !isOpen(shift.estado)) {
@@ -91,11 +121,15 @@ function refreshState() {
   state.cajaTurnos = Array.from(map.values());
   state.currentCashShift = active;
   state.currentCashShiftId = active?.id || '';
+  if (active?.id && getRemoteOpenShift()?.id === active.id) {
+    localStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
+  }
 }
 async function persistShift(shift, silent = true) {
   if (!shift?.id) return false;
   try {
     await setDoc(doc(db, 'cajaTurnos', shift.id), { ...shift, updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(configRef, { activeShiftId: isOpen(shift.estado) ? shift.id : '', updatedAt: serverTimestamp() }, { merge: true });
     return true;
   } catch (error) {
     console.warn('Caja guardada localmente, Firebase no sincronizó:', error);
@@ -207,7 +241,7 @@ export function getPaymentsForShift(shift = getActiveShift()) {
   return rows;
 }
 
-export async function registerCashReceipt({ pedidoId = '', cliente = '', descripcion = '', monto = 0, moneda = 'C$', metodo = 'efectivo', nota = 'Cobro registrado', cashId = '' } = {}) {
+export async function registerCashReceipt({ pedidoId = '', cliente = '', descripcion = '', monto = 0, moneda = 'C$', metodo = 'efectivo', nota = 'Cobro registrado', cashId = '', recibido = 0, vuelto = 0 } = {}) {
   const shift = getActiveShift();
   const amount = asNumber(monto, 0);
   if (!shift || amount <= 0) return null;
@@ -222,6 +256,8 @@ export async function registerCashReceipt({ pedidoId = '', cliente = '', descrip
     monto: amount,
     moneda,
     metodo: normalizeMethod(metodo),
+    recibido: asNumber(recibido, 0),
+    vuelto: asNumber(vuelto, 0),
     nota,
     fecha: todayISO(),
     createdAtLocal: nowISO(),
@@ -301,7 +337,10 @@ export function renderCaja() {
 
 function renderMovements(shift, totals, container) {
   if (!container) return;
-  const pagos = totals.payments.map(r => `<tr><td>${escapeHtml(r.pago.fecha || '')}</td><td>Cobro ${escapeHtml(normalizeMethod(r.metodo))}</td><td>${escapeHtml(r.pedido.cliente || '')} · ${escapeHtml(shortOrderDescription(r.pedido))}</td><td>${money(r.monto, r.moneda)}</td><td><button class="action" data-order-ticket="${r.pedido.id}">Ticket</button></td></tr>`).join('');
+  const pagos = totals.payments.map(r => {
+    const extra = normalizeMethod(r.metodo) === 'efectivo' && asNumber(r.pago.recibido, 0) > 0 ? `<br><small>Recibido: ${money(r.pago.recibido, r.moneda)} · Vuelto: ${money(r.pago.vuelto || 0, r.moneda)}</small>` : '';
+    return `<tr><td>${escapeHtml(r.pago.fecha || '')}</td><td>Cobro ${escapeHtml(normalizeMethod(r.metodo))}</td><td>${escapeHtml(r.pedido.cliente || '')} · ${escapeHtml(shortOrderDescription(r.pedido))}${extra}</td><td>${money(r.monto, r.moneda)}</td><td><button class="action" data-order-ticket="${r.pedido.id}">Ticket</button></td></tr>`;
+  }).join('');
   const ingresos = (shift.ingresosManuales || []).map(i => `<tr><td>${escapeHtml(i.fecha || '')}</td><td>Ingreso extra</td><td>${escapeHtml(i.concepto || '')}</td><td>${money(i.monto, 'C$')}</td><td>-</td></tr>`).join('');
   const isAdmin = (state.usuarioInterno?.rol || 'admin') === 'admin';
   const gastos = (shift.gastos || []).map(g => `<tr><td>${escapeHtml(g.fecha || '')}</td><td>Gasto</td><td>${escapeHtml(g.concepto || '')}</td><td>-${money(g.monto, 'C$')}</td><td class="table-actions"><button class="action" data-expense-ticket="${g.id}">Ticket</button>${isAdmin ? `<button class="action amber" data-expense-edit="${g.id}">Editar</button><button class="action red" data-expense-delete="${g.id}">Eliminar</button>` : ''}</td></tr>`).join('');

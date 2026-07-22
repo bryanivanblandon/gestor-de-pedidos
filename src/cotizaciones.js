@@ -4,7 +4,7 @@ import { qs, openDialog, closeDialog, setEmpty, toast } from './ui.js';
 import { calcPedido, escapeHtml, money, todayISO, shortOrderDescription, lineItemTotal, lineItemBaseTotal, lineItemDiscountAmount, BUSINESS_NAME, openTicketWindow } from './utils.js';
 import { findProductByInput, optionLabel, adjustInventoryForOrder } from './inventario.js';
 import { printOrderTicket } from './pedidos.js';
-import { getActiveShift } from './caja.js';
+import { getActiveShift, registerCashReceipt } from './caja.js';
 
 export function listenCotizaciones() {
   return onSnapshot(cotizacionesRef, snap => {
@@ -177,12 +177,23 @@ export async function convertQuoteToOrder(id) {
     if (methodInput === null) return;
     metodo = ['efectivo', 'tarjeta', 'transferencia'].includes(String(methodInput).toLowerCase().trim()) ? String(methodInput).toLowerCase().trim() : 'efectivo';
   }
+  let recibido = abono;
+  let vuelto = 0;
+  if (abono > 0 && metodo === 'efectivo') {
+    const recibidoInput = prompt(`Efectivo recibido para este abono de ${money(abono, q.moneda || 'C$')}`, String(abono));
+    if (recibidoInput === null) return;
+    recibido = Number(recibidoInput || 0);
+    if (recibido < abono) return toast('El efectivo recibido no puede ser menor al abono.');
+    vuelto = Math.max(0, recibido - abono);
+  }
   const ok = confirm('¿Convertir esta cotización en pedido/factura?');
   if (!ok) return;
   const shift = getActiveShift();
-  const pagos = abono > 0 ? [{ monto: abono, fecha: todayISO(), nota: 'Abono al convertir cotización', metodo, turnoId: shift?.id || '' }] : [];
+  const cashId = abono > 0 ? crypto.randomUUID() : '';
+  const pagos = abono > 0 ? [{ cashId, monto: abono, recibido, vuelto, fecha: todayISO(), nota: 'Abono al convertir cotización', metodo, turnoId: shift?.id || '' }] : [];
   const payload = { clienteId:q.clienteId, cliente:q.cliente, telefono:q.telefono||'', moneda:q.moneda||'C$', fecha_entrega:todayISO(), descripcion:shortOrderDescription(q), estado:'Pendiente', items:q.items||[], subtotal:c.subtotal, descuento:c.descuento, descuentoTipo:q.descuentoTipo||'monto', descuentoValor:q.descuentoValor||0, monto_total:c.total, total_pagado:abono, saldo:Math.max(0, c.total - abono), pagos, cotizacionId:id, turnoId: shift?.id || '', createdAt:serverTimestamp(), updatedAt:serverTimestamp() };
   const ref = await addDoc(pedidosRef, payload);
+  if (abono > 0) await registerCashReceipt({ cashId, pedidoId: ref.id, cliente: q.cliente || '', descripcion: shortOrderDescription(q), monto: abono, moneda: q.moneda || 'C$', metodo, recibido, vuelto, nota: 'Abono al convertir cotización' });
   await adjustInventoryForOrder(null, payload);
   await updateDoc(doc(db,'cotizaciones',id), { estado:'Convertida', convertida:true, pedidoId:ref.id, abonoConvertido:abono, updatedAt:serverTimestamp() });
   toast('Cotización convertida a pedido.');

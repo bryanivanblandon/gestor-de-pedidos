@@ -1,7 +1,9 @@
 import { state } from './state.js';
 import { usuariosRef, addDoc, doc, updateDoc, onSnapshot, serverTimestamp, db } from './firebase.js';
-import { qs, qsa, closeDialog, setEmpty, toast } from './ui.js';
+import { qs, qsa, closeDialog, openDialog, setEmpty, toast } from './ui.js';
 import { escapeHtml } from './utils.js';
+
+const INTERNAL_USER_KEY = 'arca_pos_usuario_interno_v1';
 
 export const ROLE_PERMISSIONS = {
   admin: ['dashboard','clientes','pedidos','cobranza','caja','inventario','cotizaciones','reportes','configuracion'],
@@ -16,7 +18,23 @@ export function listenUsuarios() {
   });
 }
 
+function readStoredInternalUser() {
+  try { return JSON.parse(localStorage.getItem(INTERNAL_USER_KEY) || 'null'); } catch { return null; }
+}
+
+function writeStoredInternalUser(user) {
+  if (!user) localStorage.removeItem(INTERNAL_USER_KEY);
+  else localStorage.setItem(INTERNAL_USER_KEY, JSON.stringify({ id: user.id, usuario: user.usuario, rol: user.rol }));
+}
+
 export function ensureInternalUser() {
+  const stored = readStoredInternalUser();
+  const validStored = stored?.id && (stored.id === 'admin-firebase' || state.usuarios.some(u => u.id === stored.id && u.activo !== false));
+  if (validStored && (!state.usuarioInterno || state.usuarioInterno.id === 'admin-firebase')) {
+    state.usuarioInterno = stored;
+    applyPermissions();
+    return;
+  }
   if (state.usuarioInterno) {
     applyPermissions();
     return;
@@ -40,6 +58,8 @@ export function applyPermissions() {
   qsa('.permiso-admin').forEach(el => { el.hidden = (user?.rol || 'admin') !== 'admin'; });
   const session = qs('#session-user');
   if (session && user) session.textContent = `${session.textContent.split(' · ')[0]} · POS: ${user.usuario || user.nombre || 'usuario'} (${user.rol || 'admin'})`;
+  const switchBtn = qs('#internal-switch-button');
+  if (switchBtn) switchBtn.textContent = `POS: ${user?.usuario || 'Administrador'}`;
 }
 
 export function renderUsuarios() {
@@ -87,6 +107,7 @@ export function internalLogin(event) {
   const err = qs('#internal-login-error');
   if (!found) { err.textContent = 'Usuario o PIN incorrecto.'; err.hidden = false; return; }
   state.usuarioInterno = found;
+  writeStoredInternalUser(found);
   err.hidden = true;
   closeDialog('#internal-login-dialog');
   applyPermissions();

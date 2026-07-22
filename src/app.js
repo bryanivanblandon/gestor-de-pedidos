@@ -16,7 +16,8 @@ import {
   savePayment,
   sendWhatsApp,
   showOrderDetail,
-  printOrderTicket
+  printOrderTicket,
+  recalcPaymentChange
 } from './pedidos.js';
 import { generateReport, setupReportEvents } from './reportes.js';
 import { listenCaja, openCashShift, addCashExpense, addManualIncome, closeCashShift, saveExchangeRate, renderCloseTotal, confirmCloseCashShift, printExpenseTicket, editCashExpense, deleteCashExpense, forceCloseActiveShift } from './caja.js';
@@ -161,6 +162,11 @@ function bindAuthForms() {
     }
   });
 
+  qs('#internal-switch-button')?.addEventListener('click', () => {
+    const dialog = qs('#internal-login-dialog');
+    if (dialog && !dialog.open) dialog.showModal();
+  });
+
   qs('#logout-button')?.addEventListener('click', async () => {
     await signOut(auth);
     toast('Sesión cerrada.');
@@ -243,7 +249,8 @@ function bindForms() {
   qs('#kardex-print')?.addEventListener('click', printKardexGeneral);
   qs('#inventory-print')?.addEventListener('click', printInventorySheet);
   qs('#add-item').addEventListener('click', () => addItemRow());
-  ['#order-discount', '#order-discount-type', '#order-initial-payment'].forEach(id => qs(id)?.addEventListener('input', recalcOrderForm));
+  ['#order-discount', '#order-discount-type', '#order-initial-payment', '#order-initial-payment-method', '#order-cash-received', '#order-currency'].forEach(id => { qs(id)?.addEventListener('input', recalcOrderForm); qs(id)?.addEventListener('change', recalcOrderForm); });
+  ['#payment-amount', '#payment-method', '#payment-cash-received'].forEach(id => { qs(id)?.addEventListener('input', recalcPaymentChange); qs(id)?.addEventListener('change', recalcPaymentChange); });
 }
 
 function bindDynamicActions() {

@@ -207,11 +207,36 @@ function applyProductToRow(row) {
   recalcOrderForm();
 }
 
+
+function updateCashChangeUI() {
+  const currency = qs('#order-currency')?.value || 'C$';
+  const abono = Number(qs('#order-initial-payment')?.value || 0);
+  const metodo = qs('#order-initial-payment-method')?.value || 'efectivo';
+  const recibido = Number(qs('#order-cash-received')?.value || 0);
+  const orderReceivedField = qs('.cash-received-field');
+  const orderChangeField = qs('.cash-change-field');
+  if (orderReceivedField) orderReceivedField.hidden = metodo !== 'efectivo' || abono <= 0;
+  if (orderChangeField) orderChangeField.hidden = metodo !== 'efectivo' || abono <= 0;
+  if (qs('#order-cash-change')) qs('#order-cash-change').textContent = money(Math.max(0, recibido - abono), currency);
+
+  const payAmount = Number(qs('#payment-amount')?.value || 0);
+  const payMethod = qs('#payment-method')?.value || 'efectivo';
+  const payReceived = Number(qs('#payment-cash-received')?.value || 0);
+  const box = qs('#payment-cash-box');
+  if (box) box.hidden = payMethod !== 'efectivo';
+  if (qs('#payment-change')) qs('#payment-change').textContent = money(Math.max(0, payReceived - payAmount), currency);
+}
+
+export function recalcPaymentChange() {
+  updateCashChangeUI();
+}
+
 export function recalcOrderForm() {
   const { subtotal, total, saldo } = getFormTotals();
   qs('#order-subtotal').textContent = subtotal.toFixed(2);
   qs('#order-total').textContent = total.toFixed(2);
   qs('#order-balance').textContent = saldo.toFixed(2);
+  updateCashChangeUI();
   document.querySelectorAll('#items-container .item-row').forEach(row => {
     const item = { cantidad: Number(row.querySelector('.item-qty').value || 0), tipoVenta: row.dataset.tipoVenta || 'unidad', ancho: Number(row.querySelector('.item-width')?.value || 0), alto: Number(row.querySelector('.item-height')?.value || 0), precio: Number(row.querySelector('.item-price').value || 0), descuentoLineaTipo: row.querySelector('.item-line-discount-type')?.value || 'monto', descuentoLineaValor: Number(row.querySelector('.item-line-discount')?.value || 0) };
     const totalEl = row.querySelector('.line-total');
@@ -289,8 +314,11 @@ export async function saveOrder(event) {
   } else {
     const shift = getActiveShift();
     const metodoPagoInicial = qs('#order-initial-payment-method')?.value || 'efectivo';
+    const recibidoInicial = metodoPagoInicial === 'efectivo' ? Number(qs('#order-cash-received')?.value || 0) : totals.abono;
+    const vueltoInicial = metodoPagoInicial === 'efectivo' ? Math.max(0, recibidoInicial - totals.abono) : 0;
+    if (totals.abono > 0 && metodoPagoInicial === 'efectivo' && recibidoInicial < totals.abono) return toast('El efectivo recibido no puede ser menor al abono.');
     const initialCashId = totals.abono > 0 ? crypto.randomUUID() : '';
-    const pagos = totals.abono > 0 ? [{ cashId: initialCashId, monto: totals.abono, moneda: payload.moneda, fecha: todayISO(), nota: 'Abono inicial', metodo: metodoPagoInicial, turnoId: shift?.id || '' }] : [];
+    const pagos = totals.abono > 0 ? [{ cashId: initialCashId, monto: totals.abono, recibido: recibidoInicial, vuelto: vueltoInicial, moneda: payload.moneda, fecha: todayISO(), nota: 'Abono inicial', metodo: metodoPagoInicial, turnoId: shift?.id || '' }] : [];
     const ref = await addDoc(pedidosRef, { ...payload, pagos, turnoId: shift?.id || '', createdAt: serverTimestamp() });
     if (totals.abono > 0) {
       await registerCashReceipt({
@@ -301,6 +329,8 @@ export async function saveOrder(event) {
         monto: totals.abono,
         moneda: payload.moneda,
         metodo: metodoPagoInicial,
+        recibido: recibidoInicial,
+        vuelto: vueltoInicial,
         nota: 'Abono inicial'
       });
     }
@@ -338,7 +368,9 @@ export function openPaymentForm(orderId) {
   qs('#payment-info').innerHTML = `<strong>${escapeHtml(p.cliente || '')}</strong><br>Pedido: ${escapeHtml(shortOrderDescription(p))}<br>Total: ${money(c.total, p.moneda || 'C$')} · Pagado: ${money(c.totalPagado, p.moneda || 'C$')} · Saldo: <strong>${money(c.saldo, p.moneda || 'C$')}</strong>`;
   qs('#payment-amount').value = '';
   qs('#payment-method').value = 'efectivo';
+  qs('#payment-cash-received').value = '';
   qs('#payment-amount').max = c.saldo;
+  updateCashChangeUI();
   openDialog('#payment-dialog');
 }
 
@@ -348,7 +380,10 @@ export async function savePayment(event) {
   const p = state.pedidos.find(x => x.id === id);
   const amount = Number(qs('#payment-amount').value || 0);
   const metodo = qs('#payment-method')?.value || 'efectivo';
+  const recibido = metodo === 'efectivo' ? Number(qs('#payment-cash-received')?.value || 0) : amount;
+  const vuelto = metodo === 'efectivo' ? Math.max(0, recibido - amount) : 0;
   if (!p || amount <= 0) return toast('Ingresa un monto válido.');
+  if (metodo === 'efectivo' && recibido < amount) return toast('El efectivo recibido no puede ser menor al monto a cobrar.');
   if (!getActiveShift()) return toast('Para cobrar o abonar primero debes abrir caja.');
   const c = calcPedido(p);
   if (amount > c.saldo) return toast('El abono no puede ser mayor al saldo.');
@@ -357,7 +392,7 @@ export async function savePayment(event) {
   const activeShift = getActiveShift();
   await updateDoc(doc(db, 'pedidos', id), {
     total_pagado: increment(amount),
-    pagos: arrayUnion({ cashId, monto: amount, moneda: p.moneda || 'C$', fecha: todayISO(), nota: 'Abono registrado', metodo, turnoId: activeShift?.id || '' }),
+    pagos: arrayUnion({ cashId, monto: amount, recibido, vuelto, moneda: p.moneda || 'C$', fecha: todayISO(), nota: 'Abono registrado', metodo, turnoId: activeShift?.id || '' }),
     updatedAt: serverTimestamp()
   });
   await registerCashReceipt({
@@ -368,6 +403,8 @@ export async function savePayment(event) {
     monto: amount,
     moneda: p.moneda || 'C$',
     metodo,
+    recibido,
+    vuelto,
     nota: 'Abono registrado'
   });
   closeDialog('#payment-dialog');
@@ -423,13 +460,17 @@ export function printOrderTicket(orderId) {
   const c = calcPedido(p);
   const currency = p.moneda || 'C$';
   const rows = (p.items || []).map(item => { const base = lineItemBaseTotal(item); const disc = lineItemDiscountAmount(item); return `<tr><td>${Number(item.cantidad || 0)}</td><td>${escapeHtml(item.descripcion || '')}${item.manual ? '<br><small>Manual / servicio</small>' : ''}${item.tipoVenta === 'area_cm2' ? `<br><small>${Number(item.ancho || 0)}×${Number(item.alto || 0)} cm</small>` : ''}${disc ? `<br><small>Desc. unitario: ${escapeHtml(discountLabel(item.descuentoLineaTipo || 'monto', item.descuentoLineaValor || 0, currency))} (-${money(disc, currency)})</small>` : ''}</td><td class="right"><small>Bruto ${money(base, currency)}</small><br>${money(lineItemTotal(item), currency)}</td></tr>`; }).join('');
+  const lastPayment = (p.pagos || []).slice(-1)[0];
+  const cashLine = lastPayment?.metodo === 'efectivo' && Number(lastPayment.recibido || 0) > 0
+    ? `<br>Recibido: ${money(lastPayment.recibido, currency)}<br>Vuelto: ${money(lastPayment.vuelto || 0, currency)}`
+    : '';
   openTicketWindow(`
     <div class="ticket-center"><strong>${BUSINESS_NAME}</strong><br><small>Ticket de pedido / factura</small></div>
     <hr>
     <p><strong>Cliente:</strong> ${escapeHtml(p.cliente || '')}<br><strong>Entrega:</strong> ${escapeHtml(p.fecha_entrega || '')}<br><strong>Estado:</strong> ${escapeHtml(normalizeEstado(p.estado || 'Pendiente'))}</p>
     <table><thead><tr><th>Cant</th><th>Producto</th><th class="right">Total</th></tr></thead><tbody>${rows}</tbody></table>
     <hr>
-    <p class="ticket-total">Subtotal: ${money(c.subtotal, currency)}<br>Descuento: ${money(c.descuento, currency)}<br>Total: ${money(c.total, currency)}<br>Abonado: ${money(c.totalPagado, currency)}<br>Saldo: ${money(c.saldo, currency)}</p>
+    <p class="ticket-total">Subtotal: ${money(c.subtotal, currency)}<br>Descuento: ${money(c.descuento, currency)}<br>Total: ${money(c.total, currency)}<br>Abonado: ${money(c.totalPagado, currency)}<br>Saldo: ${money(c.saldo, currency)}${cashLine}</p>
     <p class="ticket-center">Gracias por su preferencia</p>
   `, `ticket-pedido-${orderId}`);
 }

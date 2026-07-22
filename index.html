@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gestor de Pedidos | Arca de la Nueva Alianza</title>
-  <link rel="stylesheet" href="assets/styles.css?v=20260721-desc-line-ticket" />
+  <link rel="stylesheet" href="assets/styles.css?v=20260721-globalcash-change-users?v=20260721-desc-line-ticket" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 <body>
@@ -35,6 +35,7 @@
     </div>
     <div class="header-actions">
       <div class="status-pill" id="sync-status">Conectando…</div>
+      <button class="ghost" id="internal-switch-button" type="button">Cambiar usuario POS</button>
       <button class="ghost" id="logout-button" type="button">Cerrar sesión</button>
     </div>
   </header>
@@ -485,6 +486,8 @@
         <label>Descuento<input id="order-discount" type="number" min="0" step="0.01" value="0" /></label>
         <label>Abono inicial<input id="order-initial-payment" type="number" min="0" step="0.01" value="0" /></label>
         <label>Método abono<select id="order-initial-payment-method"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="transferencia">Transferencia</option></select></label>
+        <label class="cash-received-field">Recibido efectivo<input id="order-cash-received" type="number" min="0" step="0.01" value="0" /></label>
+        <div class="summary-card cash-change-field"><span>Vuelto</span><strong id="order-cash-change">0.00</strong></div>
         <div><span>Subtotal</span><strong id="order-subtotal">0.00</strong></div>
         <div><span>Total</span><strong id="order-total">0.00</strong></div>
         <div><span>Saldo</span><strong id="order-balance">0.00</strong></div>
@@ -504,8 +507,12 @@
       </div>
       <input type="hidden" id="payment-order-id" />
       <div id="payment-info" class="payment-info"></div>
-      <label>Monto a recibir<input id="payment-amount" type="number" min="0.01" step="0.01" required /></label>
+      <label>Monto a cobrar / abonar<input id="payment-amount" type="number" min="0.01" step="0.01" required /></label>
       <label>Método de pago<select id="payment-method"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="transferencia">Transferencia</option></select></label>
+      <div id="payment-cash-box" class="payment-info">
+        <label>Recibido en efectivo<input id="payment-cash-received" type="number" min="0" step="0.01" value="0" /></label>
+        <p>Vuelto: <strong id="payment-change">C$0.00</strong></p>
+      </div>
       <button class="primary" type="submit">Confirmar pago</button>
     </form>
   </dialog>
@@ -590,6 +597,6 @@
     </form>
   </dialog>
 
-  <script type="module" src="src/app.js?v=20260721-desc-line-ticket"></script>
+  <script type="module" src="src/app.js?v=20260721-globalcash-change-users"></script>
 </body>
 </html>

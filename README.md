@@ -173,3 +173,10 @@ El descuento en porcentaje se aplica sobre el total bruto de la línea.
 - El descuento por línea en monto se calcula como descuento unitario: cantidad × descuento unitario.
 - El total de descuentos del ticket ahora suma descuentos por línea + descuento general.
 - El subtotal del ticket muestra el bruto antes de descuentos.
+
+## Actualización: caja global, vuelto y usuarios POS
+
+- Caja global: los dispositivos usan el turno abierto en Firebase; si una caja está abierta en otro dispositivo, los cobros caen al mismo turno.
+- Cobros en efectivo: al abonar o cobrar, se registra monto recibido y vuelto.
+- Abono inicial: también permite recibido/vuelto si el método es efectivo.
+- Usuarios POS: se agregó botón para cambiar usuario interno desde el encabezado y se recuerda el usuario local en el navegador.
