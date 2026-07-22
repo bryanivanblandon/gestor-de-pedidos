@@ -166,3 +166,10 @@ Se agregó una vista mejorada de reportes:
 El descuento por línea en monto ahora funciona como **descuento unitario**.
 Ejemplo: 20 tazas a C$150 con descuento C$50 descuenta automáticamente 20 × C$50 = C$1,000.
 El descuento en porcentaje se aplica sobre el total bruto de la línea.
+
+
+## Ajuste de descuentos por línea
+
+- El descuento por línea en monto se calcula como descuento unitario: cantidad × descuento unitario.
+- El total de descuentos del ticket ahora suma descuentos por línea + descuento general.
+- El subtotal del ticket muestra el bruto antes de descuentos.

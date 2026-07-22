@@ -237,17 +237,20 @@ function getItemsFromForm() {
 
 function getFormTotals() {
   const items = getItemsFromForm();
-  const subtotal = items.reduce((sum, item) => sum + lineItemTotal(item), 0);
+  const subtotal = items.reduce((sum, item) => sum + lineItemBaseTotal(item), 0);
+  const descuentoLineas = items.reduce((sum, item) => sum + lineItemDiscountAmount(item), 0);
+  const subtotalNetoLineas = Math.max(0, subtotal - descuentoLineas);
   const descuentoTipo = qs('#order-discount-type')?.value || 'monto';
   const descuentoValor = Math.max(0, Number(qs('#order-discount').value || 0));
-  const descuento = descuentoTipo === 'porcentaje'
-    ? Math.min(subtotal, subtotal * (Math.min(descuentoValor, 100) / 100))
-    : Math.min(subtotal, descuentoValor);
+  const descuentoGeneral = descuentoTipo === 'porcentaje'
+    ? Math.min(subtotalNetoLineas, subtotalNetoLineas * (Math.min(descuentoValor, 100) / 100))
+    : Math.min(subtotalNetoLineas, descuentoValor);
+  const descuento = descuentoLineas + descuentoGeneral;
   const total = Math.max(0, subtotal - descuento);
   const abono = Number(qs('#order-initial-payment').value || 0);
   const safeAbono = Math.min(Math.max(0, abono), total);
   const saldo = Math.max(0, total - safeAbono);
-  return { items, subtotal, descuento, descuentoTipo, descuentoValor, total, abono: safeAbono, saldo };
+  return { items, subtotal, descuentoLineas, descuentoGeneral, descuento, descuentoTipo, descuentoValor, total, abono: safeAbono, saldo };
 }
 
 export async function saveOrder(event) {

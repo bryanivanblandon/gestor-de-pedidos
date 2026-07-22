@@ -84,14 +84,20 @@ export function lineItemQtyForStock(item = {}) {
 
 export function calcPedido(pedido = {}) {
   const items = Array.isArray(pedido.items) ? pedido.items : [];
-  const subtotal = items.reduce((sum, item) => sum + lineItemTotal(item), 0);
+  const subtotalBruto = items.reduce((sum, item) => sum + lineItemBaseTotal(item), 0);
+  const descuentoLineas = items.reduce((sum, item) => sum + lineItemDiscountAmount(item), 0);
+  const subtotalNetoLineas = Math.max(0, subtotalBruto - descuentoLineas);
   const descuentoTipo = pedido.descuentoTipo || pedido.tipo_descuento || 'monto';
-  const descuentoValor = Math.max(0, Number(pedido.descuentoValor ?? pedido.descuento_valor ?? pedido.descuento ?? 0));
-  const descuento = descuentoTipo === 'porcentaje' ? Math.min(subtotal, subtotal * (Math.min(descuentoValor, 100) / 100)) : Math.min(subtotal, descuentoValor);
-  const total = Math.max(0, Number(pedido.monto_total ?? pedido.total ?? (subtotal - descuento)));
+  const descuentoValor = Math.max(0, Number(pedido.descuentoValor ?? pedido.descuento_valor ?? 0));
+  const descuentoGeneral = descuentoTipo === 'porcentaje'
+    ? Math.min(subtotalNetoLineas, subtotalNetoLineas * (Math.min(descuentoValor, 100) / 100))
+    : Math.min(subtotalNetoLineas, descuentoValor);
+  const descuento = descuentoLineas + descuentoGeneral;
+  const calculado = Math.max(0, subtotalBruto - descuento);
+  const total = Math.max(0, Number(pedido.monto_total ?? pedido.total ?? calculado));
   const totalPagado = Math.max(0, Number(pedido.total_pagado ?? pedido.totalPagado ?? 0));
   const saldo = Math.max(0, total - totalPagado);
-  return { subtotal, descuento, descuentoTipo, descuentoValor, total, totalPagado, saldo };
+  return { subtotal: subtotalBruto, subtotalBruto, subtotalNetoLineas, descuentoLineas, descuentoGeneral, descuento, descuentoTipo, descuentoValor, total, totalPagado, saldo };
 }
 
 export function byDeliveryDate(a, b) {
