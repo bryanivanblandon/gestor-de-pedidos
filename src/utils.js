@@ -50,7 +50,7 @@ export function shortOrderDescription(pedido = {}) {
 }
 
 
-export function lineItemTotal(item = {}) {
+export function lineItemBaseTotal(item = {}) {
   const qty = Number(item.cantidad || 0);
   const price = Number(item.precio || 0);
   if (item.tipoVenta === 'area_cm2') {
@@ -59,6 +59,21 @@ export function lineItemTotal(item = {}) {
     return qty * ancho * alto * price;
   }
   return qty * price;
+}
+
+export function lineItemDiscountAmount(item = {}) {
+  const base = lineItemBaseTotal(item);
+  const type = item.descuentoLineaTipo || item.lineDiscountType || 'monto';
+  const value = Math.max(0, Number(item.descuentoLineaValor ?? item.lineDiscountValue ?? 0));
+  if (!base || !value) return 0;
+  if (type === 'porcentaje') return Math.min(base, base * (Math.min(value, 100) / 100));
+  // Descuento por unidad: si vendes 20 tazas y pones C$50, descuenta 20 × C$50.
+  const qty = Math.max(1, Number(item.cantidad || 1));
+  return Math.min(base, value * qty);
+}
+
+export function lineItemTotal(item = {}) {
+  return Math.max(0, lineItemBaseTotal(item) - lineItemDiscountAmount(item));
 }
 
 export function lineItemQtyForStock(item = {}) {
@@ -100,16 +115,23 @@ export function openTicketWindow(bodyHtml = '', title = 'ticket') {
   win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>
     @page { size: 80mm auto; margin: 4mm; }
     * { box-sizing: border-box; }
-    body { width: 72mm; margin: 0 auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #111; }
+    html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { width: 74mm; margin: 0 auto; font-family: Arial, Helvetica, ui-monospace, Consolas, monospace; font-size: 12.5px; font-weight: 700; color: #000; line-height: 1.25; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 3px 0; border-bottom: 1px dashed #aaa; vertical-align: top; text-align: left; }
-    hr { border: 0; border-top: 1px dashed #111; margin: 8px 0; }
+    th, td { padding: 4px 0; border-bottom: 1.5px dashed #000; vertical-align: top; text-align: left; font-weight: 700; }
+    th { font-size: 11px; text-transform: uppercase; }
+    small { font-size: 10.5px; font-weight: 700; color: #000; }
+    p { margin: 7px 0; }
+    strong { font-weight: 900; }
+    hr { border: 0; border-top: 1.5px dashed #000; margin: 9px 0; }
     .right { text-align: right; }
     .ticket-center { text-align: center; }
-    .ticket-total { text-align: right; font-weight: 700; line-height: 1.55; }
+    .ticket-center strong { font-size: 15px; font-weight: 900; letter-spacing: .2px; }
+    .ticket-total { text-align: right; font-weight: 900; line-height: 1.6; font-size: 13px; }
+    .ticket-muted { font-size: 10.5px; font-weight: 700; }
     .no-print { margin: 10px 0; display: flex; gap: 8px; }
-    button { padding: 8px 10px; border: 0; border-radius: 8px; background: #111827; color: #fff; font-weight: 700; }
-    @media print { .no-print { display: none; } body { width: 72mm; } }
+    button { padding: 8px 10px; border: 0; border-radius: 8px; background: #111827; color: #fff; font-weight: 900; }
+    @media print { .no-print { display: none; } body { width: 74mm; } }
   </style></head><body><div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div>${bodyHtml}</body></html>`);
   win.document.close();
   win.focus();

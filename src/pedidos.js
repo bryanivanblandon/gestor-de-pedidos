@@ -1,7 +1,7 @@
 import { state, ESTADOS, ESTADOS_ACTIVOS } from './state.js';
 import { pedidosRef, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, db, arrayUnion, increment } from './firebase.js';
 import { qs, openDialog, closeDialog, setEmpty, toast } from './ui.js';
-import { byDeliveryDate, calcPedido, escapeHtml, money, statusClass, todayISO, normalizePhone, BUSINESS_NAME, normalizeEstado, shortOrderDescription, openTicketWindow, lineItemTotal, lineItemQtyForStock } from './utils.js';
+import { byDeliveryDate, calcPedido, escapeHtml, money, statusClass, todayISO, normalizePhone, BUSINESS_NAME, normalizeEstado, shortOrderDescription, openTicketWindow, lineItemTotal, lineItemBaseTotal, lineItemDiscountAmount, lineItemQtyForStock } from './utils.js';
 import { findProductByInput, optionLabel, adjustInventoryForOrder } from './inventario.js';
 import { getActiveShift, registerCashReceipt } from './caja.js';
 import { renderAll } from './render.js';
@@ -113,10 +113,10 @@ function loadOrderForEdit(orderId) {
   qs('#order-discount').value = Number(p.descuentoValor ?? p.descuento_valor ?? p.descuento ?? 0);
   qs('#order-initial-payment').value = Number(p.total_pagado || 0);
   qs('#items-container').innerHTML = '';
-  (p.items?.length ? p.items : [{ cantidad: 1, descripcion: p.descripcion || '', precio: p.monto_total || 0 }]).forEach(i => addItemRow(i.cantidad, i.descripcion, i.precio, i.productoId || '', i.codigo || '', i.tipoVenta || 'unidad', i.ancho || 0, i.alto || 0, !!i.manual));
+  (p.items?.length ? p.items : [{ cantidad: 1, descripcion: p.descripcion || '', precio: p.monto_total || 0 }]).forEach(i => addItemRow(i.cantidad, i.descripcion, i.precio, i.productoId || '', i.codigo || '', i.tipoVenta || 'unidad', i.ancho || 0, i.alto || 0, !!i.manual, i.descuentoLineaTipo || 'monto', Number(i.descuentoLineaValor || 0)));
 }
 
-export function addItemRow(cantidad = 1, descripcion = '', precio = '', productoId = '', codigo = '', tipoVenta = 'unidad', ancho = 0, alto = 0, manual = false) {
+export function addItemRow(cantidad = 1, descripcion = '', precio = '', productoId = '', codigo = '', tipoVenta = 'unidad', ancho = 0, alto = 0, manual = false, descuentoLineaTipo = 'monto', descuentoLineaValor = 0) {
   const product = productoId ? state.productos.find(p => p.id === productoId) : null;
   const isManual = manual || (!productoId && descripcion);
   const row = document.createElement('div');
@@ -133,6 +133,8 @@ export function addItemRow(cantidad = 1, descripcion = '', precio = '', producto
     <input class="item-width area-input" type="number" min="0" step="0.01" value="${Number(ancho || 0)}" placeholder="Ancho cm" aria-label="Ancho cm" />
     <input class="item-height area-input" type="number" min="0" step="0.01" value="${Number(alto || 0)}" placeholder="Alto cm" aria-label="Alto cm" />
     <input class="item-price" type="number" min="0" step="0.0001" value="${product ? (precio ?? product?.precio ?? '') : (isManual ? Number(precio || 0) : '')}" placeholder="Precio" aria-label="Precio" ${product || isManual ? '' : 'disabled'} />
+    <select class="item-line-discount-type" aria-label="Tipo de descuento por línea"><option value="monto" ${descuentoLineaTipo !== 'porcentaje' ? 'selected' : ''}>Desc/u C$</option><option value="porcentaje" ${descuentoLineaTipo === 'porcentaje' ? 'selected' : ''}>Desc %</option></select>
+    <input class="item-line-discount" type="number" min="0" step="0.01" value="${Number(descuentoLineaValor || 0)}" placeholder="Desc. unit." aria-label="Descuento unitario" />
     <span class="line-total">0.00</span>
     <button type="button" class="remove-item" title="Eliminar fila">×</button>`;
   qs('#items-container').appendChild(row);
@@ -211,7 +213,7 @@ export function recalcOrderForm() {
   qs('#order-total').textContent = total.toFixed(2);
   qs('#order-balance').textContent = saldo.toFixed(2);
   document.querySelectorAll('#items-container .item-row').forEach(row => {
-    const item = { cantidad: Number(row.querySelector('.item-qty').value || 0), tipoVenta: row.dataset.tipoVenta || 'unidad', ancho: Number(row.querySelector('.item-width')?.value || 0), alto: Number(row.querySelector('.item-height')?.value || 0), precio: Number(row.querySelector('.item-price').value || 0) };
+    const item = { cantidad: Number(row.querySelector('.item-qty').value || 0), tipoVenta: row.dataset.tipoVenta || 'unidad', ancho: Number(row.querySelector('.item-width')?.value || 0), alto: Number(row.querySelector('.item-height')?.value || 0), precio: Number(row.querySelector('.item-price').value || 0), descuentoLineaTipo: row.querySelector('.item-line-discount-type')?.value || 'monto', descuentoLineaValor: Number(row.querySelector('.item-line-discount')?.value || 0) };
     const totalEl = row.querySelector('.line-total');
     if (totalEl) totalEl.textContent = lineItemTotal(item).toFixed(2);
   });
@@ -227,6 +229,8 @@ function getItemsFromForm() {
     ancho: Number(row.querySelector('.item-width')?.value || 0),
     alto: Number(row.querySelector('.item-height')?.value || 0),
     precio: Number(row.querySelector('.item-price').value || 0),
+    descuentoLineaTipo: row.querySelector('.item-line-discount-type')?.value || 'monto',
+    descuentoLineaValor: Number(row.querySelector('.item-line-discount')?.value || 0),
     manual: row.dataset.manual === 'true',
   })).filter(item => item.cantidad > 0 && item.descripcion && (item.productoId || item.manual));
 }
@@ -367,6 +371,20 @@ export async function savePayment(event) {
   toast('Abono registrado y sumado en caja.');
 }
 
+function discountLabel(type = 'monto', value = 0, currency = 'C$') {
+  const amount = Number(value || 0);
+  if (!amount) return '';
+  return type === 'porcentaje' ? `${amount}%` : money(amount, currency);
+}
+
+function lineDiscountText(item, currency = 'C$') {
+  const amount = lineItemDiscountAmount(item);
+  if (!amount) return '';
+  const label = discountLabel(item.descuentoLineaTipo || 'monto', item.descuentoLineaValor || 0, currency);
+  return `
+   Descuento unitario: ${label} (-${money(amount, currency)})`;
+}
+
 export function sendWhatsApp(orderId) {
   const p = state.pedidos.find(x => x.id === orderId);
   if (!p) return;
@@ -374,7 +392,7 @@ export function sendWhatsApp(orderId) {
   const phone = normalizePhone(client.telefono || p.telefono || '');
   if (!phone) return toast('Este cliente no tiene WhatsApp válido. Revisa que tenga 8 dígitos o código 505.');
   const c = calcPedido(p);
-  const detail = (p.items || []).map(item => `• ${item.cantidad || 1} x ${item.descripcion || 'Producto'} - ${money(lineItemTotal(item), p.moneda || 'C$')}`).join('\n');
+  const detail = (p.items || []).map(item => `• ${item.cantidad || 1} x ${item.descripcion || 'Producto'} - ${money(lineItemTotal(item), p.moneda || 'C$')}${lineDiscountText(item, p.moneda || 'C$')}`).join('\n');
   const statusLine = c.saldo > 0
     ? `Saldo pendiente: *${money(c.saldo, p.moneda || 'C$')}*`
     : 'Estado de pago: *Cancelado* ✅';
@@ -386,6 +404,8 @@ ${detail || shortOrderDescription(p)}
 📅 Entrega: *${p.fecha_entrega || 'por confirmar'}*
 📌 Estado: *${normalizeEstado(p.estado || 'Pendiente')}*
 
+💵 Subtotal: *${money(c.subtotal, p.moneda || 'C$')}*
+🏷️ Descuento: *${money(c.descuento, p.moneda || 'C$')}*
 💰 Total: *${money(c.total, p.moneda || 'C$')}*
 ✅ Abonado: *${money(c.totalPagado, p.moneda || 'C$')}*
 ${statusLine}
@@ -399,7 +419,7 @@ export function printOrderTicket(orderId) {
   if (!p) return toast('No encontré el pedido para imprimir.');
   const c = calcPedido(p);
   const currency = p.moneda || 'C$';
-  const rows = (p.items || []).map(item => `<tr><td>${Number(item.cantidad || 0)}</td><td>${escapeHtml(item.descripcion || '')}${item.manual ? '<br><small>Manual / servicio</small>' : ''}${item.tipoVenta === 'area_cm2' ? `<br><small>${Number(item.ancho || 0)}×${Number(item.alto || 0)} cm</small>` : ''}</td><td class="right">${money(lineItemTotal(item), currency)}</td></tr>`).join('');
+  const rows = (p.items || []).map(item => { const base = lineItemBaseTotal(item); const disc = lineItemDiscountAmount(item); return `<tr><td>${Number(item.cantidad || 0)}</td><td>${escapeHtml(item.descripcion || '')}${item.manual ? '<br><small>Manual / servicio</small>' : ''}${item.tipoVenta === 'area_cm2' ? `<br><small>${Number(item.ancho || 0)}×${Number(item.alto || 0)} cm</small>` : ''}${disc ? `<br><small>Desc. unitario: ${escapeHtml(discountLabel(item.descuentoLineaTipo || 'monto', item.descuentoLineaValor || 0, currency))} (-${money(disc, currency)})</small>` : ''}</td><td class="right"><small>Bruto ${money(base, currency)}</small><br>${money(lineItemTotal(item), currency)}</td></tr>`; }).join('');
   openTicketWindow(`
     <div class="ticket-center"><strong>${BUSINESS_NAME}</strong><br><small>Ticket de pedido / factura</small></div>
     <hr>
@@ -419,7 +439,7 @@ export function showOrderDetail(orderId) {
   qs('#detail-body').innerHTML = `
     <p><strong>Estado:</strong> ${escapeHtml(normalizeEstado(p.estado || 'Pendiente'))}</p>
     <p><strong>Entrega:</strong> ${escapeHtml(p.fecha_entrega || '')}</p>
-    <table class="table"><thead><tr><th>Cant.</th><th>Producto</th><th>Precio</th><th>Total</th></tr></thead><tbody>${(p.items || []).map(item => `<tr><td>${item.cantidad}</td><td>${escapeHtml(item.descripcion)}</td><td>${money(item.precio, p.moneda || 'C$')}</td><td>${money(lineItemTotal(item), p.moneda || 'C$')}</td></tr>`).join('')}</tbody></table>
+    <table class="table"><thead><tr><th>Cant.</th><th>Producto</th><th>Precio</th><th>Desc. línea</th><th>Total</th></tr></thead><tbody>${(p.items || []).map(item => `<tr><td>${item.cantidad}</td><td>${escapeHtml(item.descripcion)}</td><td>${money(item.precio, p.moneda || 'C$')}</td><td>${lineItemDiscountAmount(item) ? `${escapeHtml(discountLabel(item.descuentoLineaTipo || 'monto', item.descuentoLineaValor || 0, p.moneda || 'C$'))}<br><small>-${money(lineItemDiscountAmount(item), p.moneda || 'C$')}</small>` : '-'}</td><td>${money(lineItemTotal(item), p.moneda || 'C$')}</td></tr>`).join('')}</tbody></table>
     <p><strong>Subtotal:</strong> ${money(c.subtotal, p.moneda || 'C$')} · <strong>Descuento:</strong> ${money(c.descuento, p.moneda || 'C$')}</p>
     <p><strong>Total:</strong> ${money(c.total, p.moneda || 'C$')} · <strong>Pagado:</strong> ${money(c.totalPagado, p.moneda || 'C$')} · <strong>Saldo:</strong> ${money(c.saldo, p.moneda || 'C$')}</p>
     <button class="primary" type="button" data-order-ticket="${p.id}">Imprimir ticket 80mm</button>

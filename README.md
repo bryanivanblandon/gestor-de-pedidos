@@ -151,3 +151,18 @@ Se agregó una vista mejorada de reportes:
 - Filtros por fecha, cliente, moneda, estado, método de pago, producto y búsqueda.
 - Detalle de gastos por rango de fechas.
 - Vista previa en pantalla y PDF visible en el navegador antes de imprimir o descargar.
+
+
+## Actualización: descuentos y tickets
+
+- Descuento por línea en pedidos y cotizaciones: cada producto puede tener descuento por monto o por porcentaje.
+- El subtotal ahora se calcula ya descontando las líneas; el descuento general sigue funcionando aparte.
+- El mensaje de WhatsApp muestra descuento general y descuentos de línea cuando existan.
+- Los tickets 80mm ahora usan letra más oscura, más grande y en negrita para mejorar la impresión térmica.
+
+
+## Ajuste de descuento por producto
+
+El descuento por línea en monto ahora funciona como **descuento unitario**.
+Ejemplo: 20 tazas a C$150 con descuento C$50 descuenta automáticamente 20 × C$50 = C$1,000.
+El descuento en porcentaje se aplica sobre el total bruto de la línea.
